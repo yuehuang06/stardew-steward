@@ -1,0 +1,14 @@
+# Rust
+/target/
+*.log
+
+# Config
+config.toml
+.env
+
+# 真实存档（不提交到 Git）
+data/saves/
+
+# IDE
+.vscode/
+.idea/

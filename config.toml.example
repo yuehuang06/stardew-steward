@@ -1,0 +1,27 @@
+# Stardew Steward 配置文件示例
+# 复制为 config.toml 并修改为你自己的路径和密钥
+
+[model]
+# API 配置（R3: 可自定义模型配置）
+endpoint = "https://api.deepseek.com/v1/chat/completions"
+api_key = ""           # 也可用 .env 中的 API_KEY
+model = "deepseek-chat"
+context_length = 8192
+thinking_mode = false
+# 价格（R6: Token 用量与价格统计）
+price_input = 0.0014   # CNY per 1K input tokens
+price_output = 0.0028   # CNY per 1K output tokens
+
+[save]
+# 存档路径 —— WSL 开发时用 /mnt/c/... 路径
+# Windows 运行时用 C:\Users\... 路径
+path = "/mnt/c/Users/gnauh/AppData/Roaming/StardewValley/Saves/木炉星_446213339/木炉星_446213339"
+
+[agent]
+# Token 预算（R6: 用量到预算自动中断）
+token_budget = 50000
+# Agent Loop 最大步数
+max_steps = 10
+
+[knowledge]
+db_path = "data/knowledge.db"

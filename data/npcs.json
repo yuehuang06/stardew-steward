@@ -1,0 +1,17 @@
+{
+  "Abigail": {
+    "birthday": "Fall 13",
+    "loves": ["紫水晶", "巧克力蛋糕", "炖菜", "南瓜"],
+    "likes": ["石英", "花", "咖啡"]
+  },
+  "Sebastian": {
+    "birthday": "Winter 10",
+    "loves": ["冰冻之泪", "黑曜石", "虚空蛋", "南瓜汤"],
+    "likes": ["石英", "咖啡"]
+  },
+  "Penny": {
+    "birthday": "Fall 2",
+    "loves": ["红蘑菇", "罂粟", "牛奶"],
+    "likes": ["鸡蛋", "花"]
+  }
+}

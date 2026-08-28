@@ -1,0 +1,26 @@
+{
+  "蓝莓": {
+    "season": "summer",
+    "growth_days": 13,
+    "regrows": true,
+    "regrow_days": 4,
+    "sell_price": 50,
+    "seed_cost": 30
+  },
+  "玉米": {
+    "season": "summer/fall",
+    "growth_days": 14,
+    "regrows": true,
+    "regrow_days": 4,
+    "sell_price": 50,
+    "seed_cost": 75
+  },
+  "草莓": {
+    "season": "spring",
+    "growth_days": 8,
+    "regrows": true,
+    "regrow_days": 4,
+    "sell_price": 120,
+    "seed_cost": 100
+  }
+}

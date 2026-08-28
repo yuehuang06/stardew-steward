@@ -1,0 +1,20 @@
+{
+  "小嘴鲈鱼": {
+    "season": "all",
+    "weather": "any",
+    "time": "any",
+    "location": "煤渣森林的池塘"
+  },
+  "鲶鱼": {
+    "season": "spring/summer/fall",
+    "weather": "rain",
+    "time": "06:00-22:00",
+    "location": "河流（小镇/煤渣森林）"
+  },
+  "太阳鱼": {
+    "season": "spring/summer",
+    "weather": "any",
+    "time": "06:00-19:00",
+    "location": "河流"
+  }
+}
