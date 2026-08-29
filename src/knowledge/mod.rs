@@ -136,63 +136,88 @@ impl KnowledgeBase {
     }
 
     pub fn search(&self, keyword: &str) -> anyhow::Result<String> {
-        let pattern = format!("%{}%", keyword);
+        let keywords: Vec<String> = keyword.split_whitespace()
+            .map(|k| format!("%{}%", k))
+            .collect();
         let mut results = Vec::new();
 
-        let mut crop_rows = self.conn.prepare(
-            "SELECT name, season, growth_days, regrows, sell_price, seed_cost FROM crops WHERE name LIKE ?"
-        )?;
-        let crop_iter = crop_rows.query_map([&pattern], |row| {
-            Ok(format!(
-                "作物|{}: 季节={}, 生长{}天, {}复收, 售价{}g, 种子{}g",
-                row.get::<_, String>(0)?,
-                row.get::<_, String>(1)?,
-                row.get::<_, i64>(2)?,
-                if row.get::<_, i64>(3)? != 0 { "可" } else { "不" },
-                row.get::<_, i64>(4)?,
-                row.get::<_, i64>(5)?,
-            ))
-        })?;
-        for row in crop_iter {
-            if let Ok(text) = row {
-                results.push(text);
+        // 对每个关键词查 crops，用 OR 拼接
+        if !keywords.is_empty() {
+            let crop_clauses: Vec<String> = keywords.iter()
+                .map(|_| "name LIKE ?".to_string())
+                .collect();
+            let sql = format!(
+                "SELECT name, season, growth_days, regrows, sell_price, seed_cost FROM crops WHERE {}",
+                crop_clauses.join(" OR ")
+            );
+            let mut stmt = self.conn.prepare(&sql)?;
+            let params: Vec<&dyn rusqlite::ToSql> = keywords.iter()
+                .map(|k| k as &dyn rusqlite::ToSql)
+                .collect();
+            let rows = stmt.query_map(params.as_slice(), |row| {
+                Ok(format!(
+                    "作物|{}: 季节={}, 生长{}天, {}复收, 售价{}g, 种子{}g",
+                    row.get::<_, String>(0)?,
+                    row.get::<_, String>(1)?,
+                    row.get::<_, i64>(2)?,
+                    if row.get::<_, i64>(3)? != 0 { "可" } else { "不" },
+                    row.get::<_, i64>(4)?,
+                    row.get::<_, i64>(5)?,
+                ))
+            })?;
+            for row in rows {
+                if let Ok(text) = row { results.push(text); }
             }
-        }
 
-        let mut npc_rows = self.conn.prepare(
-            "SELECT name, birthday, loves, likes FROM npcs WHERE name LIKE ?"
-        )?;
-        let npc_iter = npc_rows.query_map([&pattern], |row| {
-            Ok(format!(
-                "NPC|{}: 生日={}, 最爱[{}], 喜欢[{}]",
-                row.get::<_, String>(0)?,
-                row.get::<_, String>(1)?,
-                row.get::<_, String>(2)?,
-                row.get::<_, String>(3)?,
-            ))
-        })?;
-        for row in npc_iter {
-            if let Ok(text) = row {
-                results.push(text);
+            // npcs
+            let npc_clauses: Vec<String> = keywords.iter()
+                .map(|_| "name LIKE ?".to_string())
+                .collect();
+            let sql = format!(
+                "SELECT name, birthday, loves, likes FROM npcs WHERE {}",
+                npc_clauses.join(" OR ")
+            );
+            let mut stmt = self.conn.prepare(&sql)?;
+            let params: Vec<&dyn rusqlite::ToSql> = keywords.iter()
+                .map(|k| k as &dyn rusqlite::ToSql)
+                .collect();
+            let rows = stmt.query_map(params.as_slice(), |row| {
+                Ok(format!(
+                    "NPC|{}: 生日={}, 最爱[{}], 喜欢[{}]",
+                    row.get::<_, String>(0)?,
+                    row.get::<_, String>(1)?,
+                    row.get::<_, String>(2)?,
+                    row.get::<_, String>(3)?,
+                ))
+            })?;
+            for row in rows {
+                if let Ok(text) = row { results.push(text); }
             }
-        }
 
-        let mut fish_rows = self.conn.prepare(
-            "SELECT name, season, weather, time, location FROM fish WHERE name LIKE ?"
-        )?;
-        let fish_iter = fish_rows.query_map([&pattern], |row| {
-            Ok(format!(
-                "鱼|{}: 季节={}, 天气={}, 时间={}, 地点={}",
-                row.get::<_, String>(0)?,
-                row.get::<_, String>(1)?,
-                row.get::<_, String>(2)?,
-                row.get::<_, String>(3)?,
-                row.get::<_, String>(4)?,
-            ))
-        })?;
-        for row in fish_iter {
-            if let Ok(text) = row {
-                results.push(text);
+            // fish
+            let fish_clauses: Vec<String> = keywords.iter()
+                .map(|_| "name LIKE ?".to_string())
+                .collect();
+            let sql = format!(
+                "SELECT name, season, weather, time, location FROM fish WHERE {}",
+                fish_clauses.join(" OR ")
+            );
+            let mut stmt = self.conn.prepare(&sql)?;
+            let params: Vec<&dyn rusqlite::ToSql> = keywords.iter()
+                .map(|k| k as &dyn rusqlite::ToSql)
+                .collect();
+            let rows = stmt.query_map(params.as_slice(), |row| {
+                Ok(format!(
+                    "鱼|{}: 季节={}, 天气={}, 时间={}, 地点={}",
+                    row.get::<_, String>(0)?,
+                    row.get::<_, String>(1)?,
+                    row.get::<_, String>(2)?,
+                    row.get::<_, String>(3)?,
+                    row.get::<_, String>(4)?,
+                ))
+            })?;
+            for row in rows {
+                if let Ok(text) = row { results.push(text); }
             }
         }
 

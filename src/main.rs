@@ -85,7 +85,7 @@ async fn main() -> anyhow::Result<()> {
             "properties": {
                 "keyword": {
                     "type": "string",
-                    "description": "搜索关键词，如作物名、NPC名、鱼名"
+                    "description": "搜索关键词，多个关键词用空格分隔，如'蓝莓 辣椒 Abigail'"
                 }
             },
             "required": ["keyword"]
@@ -139,14 +139,64 @@ async fn main() -> anyhow::Result<()> {
         \n\
         规则：\n\
         - 每次被提问时，先调 read_save 读取最新存档状态\n\
-        - 建议要具体、可执行，不要泛泛而谈\n\
+        - 需要查询作物/NPC/鱼类的具体数据时，调 query_knowledge，可在 keyword 中传入多个关键词用空格分隔（如 蓝莓 辣椒 啤酒花）\n\
         - 用中文回答\n\
-        - 存档路径: {}",
+        - 存档路径: {}\n\
+        \n\
+        回答方式：\n\
+        - 如果用户问的是一般问题（如「蓝莓什么季节种」「Abigail喜欢什么」），直接用自然语言回答\n\
+        - 如果用户要求安排日程或问「今天该干嘛」，输出以下 JSON 格式（不要输出其他文字）：\n\
+        ```\n\
+        {{\n\
+          \"summary\": \"一句话总结今天该干嘛\",\n\
+          \"tasks\": [\n\
+            {{\n\
+              \"action\": \"harvest|shop|gift|water|mine|fish|other\",\n\
+              \"description\": \"具体做什么\",\n\
+              \"time_cost\": 0.5,\n\
+              \"cost\": 2000,\n\
+              \"income\": 800,\n\
+              \"priority\": \"must|should|could\"\n\
+            }}\n\
+          ],\n\
+          \"total_time\": 8.5,\n\
+          \"total_cost\": 2000,\n\
+          \"total_income\": 800,\n\
+          \"notes\": [\"提醒1\", \"提醒2\"]\n\
+        }}\n\
+        ```\n\
+        注意：\n\
+        - cost 是花费（正数），income 是收入（正数）\n\
+        - total_cost 不能超过玩家当前资金\n\
+        - total_time 不能超过一天约 12 游戏小时\n\
+        - 至少要有一个 must 优先级的任务（如浇水或收获）",
         save_path
     );
 
     let reporter = Arc::new(CliReporter::new());
+
+    // 从存档预读资金和季节，用于校验器
+    let validator = {
+        match parser::parse(std::path::Path::new(&save_path)) {
+            Ok(state) => {
+                let v = validator::Validator::new(
+                    state.money,
+                    &state.date.season,
+                    12.0,
+                );
+                Some(v)
+            }
+            Err(e) => {
+                eprintln!("警告: 无法预读存档用于校验: {}", e);
+                None
+            }
+        }
+    };
+
     let mut agent = agent::Agent::new(config, tools, reporter, system_prompt);
+    if let Some(v) = validator {
+        agent.set_validator(v);
+    }
 
     if let Some(question) = &cli.ask {
         let result = agent.run(question).await?;

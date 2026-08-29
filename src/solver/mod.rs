@@ -7,5 +7,7 @@
 
 pub mod task;
 pub mod greedy;
+pub mod schedule;
 
 pub use task::{Task, Schedule};
+pub use schedule::{DailySchedule, ScheduleTask};

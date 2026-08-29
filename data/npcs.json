@@ -13,5 +13,135 @@
     "birthday": "Fall 2",
     "loves": ["红蘑菇", "罂粟", "牛奶"],
     "likes": ["鸡蛋", "花"]
+  },
+  "Pierre": {
+    "birthday": "Spring 1",
+    "loves": ["炒蘑菇", "炸鱿鱼"],
+    "likes": ["所有水果", "所有蔬菜"]
+  },
+  "Emily": {
+    "birthday": "Spring 27",
+    "loves": ["羊毛", "布料", "紫水晶", "海蓝宝石"],
+    "likes": ["石英", "花"]
+  },
+  "Jodi": {
+    "birthday": "Fall 11",
+    "loves": ["帕尔马奶酪茄子", "巧克力蛋糕", "糖霜蛋糕"],
+    "likes": ["鸡蛋", "煎蛋"]
+  },
+  "Robin": {
+    "birthday": "Spring 7",
+    "loves": ["帕尔马奶酪茄子", "山羊奶酪", "奶酪"],
+    "likes": ["鸡蛋", "木头"]
+  },
+  "Willy": {
+    "birthday": "Summer 24",
+    "loves": ["鲸鱼汤", "锦鲤鱼", "章鱼"],
+    "likes": ["鱼", "啤酒"]
+  },
+  "Shane": {
+    "birthday": "Spring 20",
+    "loves": ["辣椒爆爆弹", "披萨", "啤酒", "爆炒辣椒"],
+    "likes": ["鸡蛋", "咖啡"]
+  },
+  "Clint": {
+    "birthday": "Winter 14",
+    "loves": ["翡翠", "海蓝宝石", "猫眼石", "仙人掌果"],
+    "likes": ["石英", "咖啡"]
+  },
+  "Lewis": {
+    "birthday": "Spring 27",
+    "loves": ["秋日盛宴", "番红花", "辣椒"],
+    "likes": ["玉米", "卷心菜"]
+  },
+  "Leah": {
+    "birthday": "Spring 23",
+    "loves": ["罂粟种子沙拉", "蘑菇浓汤", "山羊奶酪", "葡萄酒"],
+    "likes": ["沙拉", "蔬菜"]
+  },
+  "Marnie": {
+    "birthday": "Summer 18",
+    "loves": ["钻石", "农夫午餐", "粉红蛋糕"],
+    "likes": ["鸡蛋", "奶酪"]
+  },
+  "Elliott": {
+    "birthday": "Fall 5",
+    "loves": ["龙虾", "螃蟹蛋糕", "墨鱼汁"],
+    "likes": ["鱼", "沙拉"]
+  },
+  "Pam": {
+    "birthday": "Winter 18",
+    "loves": ["蜂蜜酒", "欧洲防风草", "蜂蜜"],
+    "likes": ["啤酒", "奶酪"]
+  },
+  "Linus": {
+    "birthday": "Summer 1",
+    "loves": ["山药", "椰子", "仙人掌果"],
+    "likes": ["蘑菇", "浆果"]
+  },
+  "Haley": {
+    "birthday": "Spring 14",
+    "loves": ["向日葵", "椰子", "水果沙拉", "粉红蛋糕"],
+    "likes": ["花"]
+  },
+  "Maru": {
+    "birthday": "Summer 4",
+    "loves": ["电池组", "草莓", "电磁水晶"],
+    "likes": ["石英", "铜矿石"]
+  },
+  "Alex": {
+    "birthday": "Summer 19",
+    "loves": ["完美早餐", "鲑鱼晚餐"],
+    "likes": ["鸡蛋", "咖啡"]
+  },
+  "Gus": {
+    "birthday": "Spring 8",
+    "loves": ["钻石", "橙色辣酱", "魔法糖冰棒"],
+    "likes": ["披萨", "沙拉"]
+  },
+  "George": {
+    "birthday": "Winter 22",
+    "loves": ["炒蘑菇", "韭菜"],
+    "likes": ["煎蛋"]
+  },
+  "Evelyn": {
+    "birthday": "Spring 16",
+    "loves": ["甜豌豆花", "奶酪花椰菜", "巧克力蛋糕"],
+    "likes": ["花", "蔬菜"]
+  },
+  "Demetrius": {
+    "birthday": "Summer 6",
+    "loves": ["草莓", "豆类火锅"],
+    "likes": ["水果", "蔬菜"]
+  },
+  "Sam": {
+    "birthday": "Summer 17",
+    "loves": ["仙人掌果", "枫糖棒", "披萨"],
+    "likes": ["鸡蛋", "咖啡"]
+  },
+  "Caroline": {
+    "birthday": "Fall 15",
+    "loves": ["夏日花束", "红之盛宴"],
+    "likes": ["鱼", "沙拉"]
+  },
+  "Vincent": {
+    "birthday": "Spring 10",
+    "loves": ["蔓越莓糖果", "葡萄", "蜗牛"],
+    "likes": ["鸡蛋", "牛奶"]
+  },
+  "Harvey": {
+    "birthday": "Spring 26",
+    "loves": ["咖啡", "腌菜", "松露", "超级餐"],
+    "likes": ["沙拉", "葡萄酒"]
+  },
+  "Jas": {
+    "birthday": "Summer 4",
+    "loves": ["粉红蛋糕", "玫瑰仙子面", "仙女盒"],
+    "likes": ["鸡蛋", "牛奶"]
+  },
+  "Wizard": {
+    "birthday": "Winter 17",
+    "loves": ["超级餐", "魔法糖冰棒", "紫蘑菇"],
+    "likes": ["树脂", "太阳精华"]
   }
 }

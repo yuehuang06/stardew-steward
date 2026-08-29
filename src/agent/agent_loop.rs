@@ -1,8 +1,10 @@
 use std::sync::Arc;
 
 use crate::config::Config;
+use crate::solver::schedule::DailySchedule;
 use crate::tools::{ToolRegistry, ToolCallRequest};
 use crate::usage::UsageTracker;
+use crate::validator::Validator;
 use super::message::Message;
 use super::progress::ProgressReporter;
 
@@ -14,6 +16,7 @@ pub struct Agent {
     reporter: Arc<dyn ProgressReporter>,
     history: Vec<Message>,
     system_prompt: String,
+    validator: Option<Validator>,
 }
 
 impl Agent {
@@ -33,7 +36,12 @@ impl Agent {
             reporter,
             history: vec![Message::system(&system_prompt)],
             system_prompt,
+            validator: None,
         }
+    }
+
+    pub fn set_validator(&mut self, v: Validator) {
+        self.validator = Some(v);
     }
 
     pub fn usage_summary(&self) -> String {
@@ -44,7 +52,7 @@ impl Agent {
     pub async fn run(&mut self, user_message: &str) -> anyhow::Result<String> {
         self.history.push(Message::user(user_message));
 
-        for step in 0..self.config.agent.max_steps {
+        for _step in 0..self.config.agent.max_steps {
             if self.reporter.is_interrupted() {
                 return Ok("(用户已打断)".into());
             }
@@ -54,6 +62,9 @@ impl Agent {
             self.reporter.on_done();
 
             if let Some(tool_call) = response.tool_call {
+                if !response.assistant_content.is_empty() {
+                    println!("  💭 {}", response.assistant_content);
+                }
                 let tool_msg = Message::assistant_with_tool_calls(
                     &response.assistant_content,
                     response.tool_calls_json.clone(),
@@ -68,8 +79,44 @@ impl Agent {
                 continue;
             }
 
-            self.history.push(Message::assistant(&response.text));
-            return Ok(response.text);
+            // LLM 返回了文本——尝试解析为日程 JSON
+            let text = response.text.trim();
+
+            // 尝试提取 JSON（LLM 可能在 JSON 外面包了 ```json ... ```）
+            let json_str = extract_json(text).unwrap_or(text);
+
+            match serde_json::from_str::<DailySchedule>(json_str) {
+                Ok(schedule) => {
+                    // 校验
+                    if let Some(ref validator) = self.validator {
+                        let errors = validator.check(&schedule);
+                        if !errors.is_empty() {
+                            let error_msg = format!(
+                                "你的日程未通过校验，请修正后重新输出 JSON：\n{}",
+                                errors.iter()
+                                    .map(|e| format!("- {}", e))
+                                    .collect::<Vec<_>>()
+                                    .join("\n")
+                            );
+                            self.reporter.on_step("校验未通过，正在重试...");
+                            self.reporter.on_done();
+                            self.history.push(Message::assistant(text));
+                            self.history.push(Message::user(&error_msg));
+                            continue;
+                        }
+                    }
+
+                    // 校验通过，渲染成 Markdown
+                    let rendered = crate::solver::schedule::render(&schedule);
+                    self.history.push(Message::assistant(text));
+                    return Ok(rendered);
+                }
+                Err(_) => {
+                    // 不是 JSON，当普通文本回答返回
+                    self.history.push(Message::assistant(text));
+                    return Ok(text.to_string());
+                }
+            }
         }
 
         Ok("(达到最大步数，自动停止)".into())
@@ -114,7 +161,6 @@ impl Agent {
         let usage = &resp_json["usage"];
         if let Some(prompt) = usage["prompt_tokens"].as_u64() {
             if let Some(completion) = usage["completion_tokens"].as_u64() {
-                //记录了一则对话的usage
                 self.usage.record(prompt, completion);
                 if self.usage.over_budget() {
                     anyhow::bail!("Token 预算已用尽: {}", self.usage.summary());
@@ -157,6 +203,22 @@ impl Agent {
             tool_calls_json: serde_json::Value::Null,
         })
     }
+}
+
+/// 从可能包含 ```json ... ``` 的文本中提取 JSON
+fn extract_json(text: &str) -> Option<&str> {
+    if let Some(start) = text.find("```json") {
+        let rest = &text[start + 7..];
+        if let Some(end) = rest.find("```") {
+            return Some(rest[..end].trim());
+        }
+    }
+    if let Some(start) = text.find('{') {
+        if let Some(end) = text.rfind('}') {
+            return Some(&text[start..=end]);
+        }
+    }
+    None
 }
 
 struct LlmResponse {

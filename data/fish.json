@@ -16,5 +16,143 @@
     "weather": "any",
     "time": "06:00-19:00",
     "location": "河流"
+  },
+  "西鲱": {
+    "season": "spring/summer/fall",
+    "weather": "rain",
+    "time": "06:00-02:00",
+    "location": "河流"
+  },
+  "鲷鱼": {
+    "season": "all",
+    "weather": "any",
+    "time": "18:00-02:00",
+    "location": "河流"
+  },
+  "大口鲈鱼": {
+    "season": "all",
+    "weather": "any",
+    "time": "06:00-22:00",
+    "location": "湖泊"
+  },
+  "鲤鱼": {
+    "season": "all",
+    "weather": "any",
+    "time": "any",
+    "location": "湖泊/池塘"
+  },
+  "大头鱼": {
+    "season": "all",
+    "weather": "any",
+    "time": "any",
+    "location": "湖泊"
+  },
+  "鳗鱼": {
+    "season": "spring/fall",
+    "weather": "rain",
+    "time": "16:00-02:00",
+    "location": "海洋"
+  },
+  "沙丁鱼": {
+    "season": "all",
+    "weather": "any",
+    "time": "06:00-19:00",
+    "location": "海洋"
+  },
+  "金枪鱼": {
+    "season": "summer/winter",
+    "weather": "any",
+    "time": "06:00-19:00",
+    "location": "海洋"
+  },
+  "红鲷鱼": {
+    "season": "summer/fall",
+    "weather": "any",
+    "time": "06:00-19:00",
+    "location": "海洋"
+  },
+  "章鱼": {
+    "season": "summer/winter",
+    "weather": "any",
+    "time": "06:00-22:00",
+    "location": "海洋"
+  },
+  "鲑鱼": {
+    "season": "summer/fall",
+    "weather": "any",
+    "time": "06:00-19:00",
+    "location": "海洋"
+  },
+  "河豚": {
+    "season": "summer",
+    "weather": "any",
+    "time": "12:00-16:00",
+    "location": "海洋"
+  },
+  "鱼王": {
+    "season": "spring",
+    "weather": "rain",
+    "time": "06:00-22:00",
+    "location": "湖泊（深水区）"
+  },
+  "比目鱼": {
+    "season": "spring/summer",
+    "weather": "any",
+    "time": "06:00-11:00/19:00-02:00",
+    "location": "海洋"
+  },
+  "鳀鱼": {
+    "season": "all",
+    "weather": "any",
+    "time": "06:00-19:00",
+    "location": "海洋"
+  },
+  "鲈鱼": {
+    "season": "all",
+    "weather": "any",
+    "time": "06:00-19:00",
+    "location": "河流/湖泊"
+  },
+  "彩虹鱼": {
+    "season": "summer",
+    "weather": "any",
+    "time": "06:00-19:00",
+    "location": "河流"
+  },
+  "龙虾": {
+    "season": "all",
+    "weather": "any",
+    "time": "any",
+    "location": "蟹笼（海洋）"
+  },
+  "螃蟹": {
+    "season": "all",
+    "weather": "any",
+    "time": "any",
+    "location": "蟹笼（海洋）"
+  },
+  "牡蛎": {
+    "season": "all",
+    "weather": "any",
+    "time": "any",
+    "location": "蟹笼（海洋）"
+  },
+  "蛤蜊": {
+    "season": "all",
+    "weather": "any",
+    "time": "any",
+    "location": "蟹笼（海洋）"
+  },
+  "蜗牛": {
+    "season": "all",
+    "weather": "any",
+    "time": "any",
+    "location": "蟹笼（淡水）"
+  },
+  "鲤鱼（镜鲤）": {
+    "season": "all",
+    "weather": "any",
+    "time": "any",
+    "location": "湖泊"
   }
 }
