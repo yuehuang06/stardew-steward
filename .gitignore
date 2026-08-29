@@ -9,6 +9,9 @@ config.toml
 # 真实存档（不提交到 Git）
 data/saves/
 
+# 运行时生成的数据库
+data/*.db
+
 # IDE
 .vscode/
 .idea/

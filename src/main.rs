@@ -8,7 +8,7 @@ mod ui;
 mod usage;
 mod validator;
 
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 use clap::Parser;
 use ui::CliReporter;
 
@@ -51,6 +51,10 @@ async fn main() -> anyhow::Result<()> {
 
     let mut tools = tools::ToolRegistry::new();
 
+    let kb = Arc::new(Mutex::new(
+        knowledge::KnowledgeBase::open(&config.knowledge.db_path)?
+    ));
+
     let default_save = save_path.clone();
     tools.register(
         "read_save",
@@ -72,6 +76,7 @@ async fn main() -> anyhow::Result<()> {
         },
     );
 
+    let kb_clone = Arc::clone(&kb);
     tools.register(
         "query_knowledge",
         "搜索星露谷知识库（作物收益、NPC喜好、鱼类约束等）。传入关键词。",
@@ -85,9 +90,9 @@ async fn main() -> anyhow::Result<()> {
             },
             "required": ["keyword"]
         }),
-        |args| {
+        move |args| {
             let keyword = args["keyword"].as_str().unwrap_or("");
-            tools::query_knowledge::execute(keyword)
+            tools::query_knowledge::execute(&kb_clone, keyword)
         },
     );
 

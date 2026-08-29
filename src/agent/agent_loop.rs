@@ -1,5 +1,4 @@
 use std::sync::Arc;
-use serde::{Deserialize, Serialize};
 
 use crate::config::Config;
 use crate::tools::{ToolRegistry, ToolCallRequest};
@@ -76,7 +75,7 @@ impl Agent {
         Ok("(达到最大步数，自动停止)".into())
     }
 
-    async fn call_llm(&self) -> anyhow::Result<LlmResponse> {
+    async fn call_llm(&mut self) -> anyhow::Result<LlmResponse> {
         let messages_json: Vec<serde_json::Value> = self.history.iter()
             .map(|m| serde_json::to_value(m).unwrap_or_default())
             .collect();
@@ -115,9 +114,11 @@ impl Agent {
         let usage = &resp_json["usage"];
         if let Some(prompt) = usage["prompt_tokens"].as_u64() {
             if let Some(completion) = usage["completion_tokens"].as_u64() {
-                // UsageTracker 需要 &mut self，但 call_llm 只读 &self
-                // 这里先不记录，等重构时再处理
-                let _ = (prompt, completion);
+                //记录了一则对话的usage
+                self.usage.record(prompt, completion);
+                if self.usage.over_budget() {
+                    anyhow::bail!("Token 预算已用尽: {}", self.usage.summary());
+                }
             }
         }
 
