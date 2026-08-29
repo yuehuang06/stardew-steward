@@ -65,13 +65,14 @@ impl Agent {
                 if !response.assistant_content.is_empty() {
                     println!("  💭 {}", response.assistant_content);
                 }
+                let tool_desc = describe_tool_call(&tool_call);
                 let tool_msg = Message::assistant_with_tool_calls(
                     &response.assistant_content,
                     response.tool_calls_json.clone(),
                 );
                 self.history.push(tool_msg);
 
-                self.reporter.on_step(&format!("正在执行工具: {}", tool_call.name));
+                self.reporter.on_step(&format!("正在执行: {}", tool_desc));
                 let result = self.tools.execute(&tool_call).await?;
                 self.reporter.on_done();
 
@@ -219,6 +220,22 @@ fn extract_json(text: &str) -> Option<&str> {
         }
     }
     None
+}
+
+/// 从工具调用参数中提取关键信息，生成人类可读的描述
+fn describe_tool_call(call: &ToolCallRequest) -> String {
+    match call.name.as_str() {
+        "read_save" => "读取存档".to_string(),
+        "query_knowledge" => {
+            let kw = call.arguments["keyword"].as_str().unwrap_or("");
+            format!("查询知识库: {}", kw)
+        }
+        "solve_schedule" => {
+            let tasks = call.arguments["tasks"].as_array().map(|a| a.len()).unwrap_or(0);
+            format!("求解日程（{}项任务）", tasks)
+        }
+        _ => call.name.clone(),
+    }
 }
 
 struct LlmResponse {
