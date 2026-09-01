@@ -68,6 +68,8 @@ fn parse_xml(xml: &str) -> anyhow::Result<GameState> {
 
     let inventory = parse_inventory(&player);
 
+    let chests = parse_chests(&root);
+
     Ok(GameState {
         money,
         date: GameDate { year, season, day },
@@ -76,6 +78,7 @@ fn parse_xml(xml: &str) -> anyhow::Result<GameState> {
         crops,
         friendships,
         inventory,
+        chests,
     })
 }
 
@@ -147,6 +150,97 @@ fn parse_inventory(player: &roxmltree::Node) -> Vec<InventoryItem> {
 
             if !name.is_empty() && name != "null" {
                 result.push(InventoryItem { name, count: stack });
+            }
+        }
+    }
+
+    result
+}
+
+fn parse_chests(root: &roxmltree::Node) -> Vec<Chest> {
+    let mut result = Vec::new();
+
+    let locations = match root.children().find(|n| n.has_tag_name("locations")) {
+        Some(l) => l,
+        None => return result,
+    };
+
+    for loc in locations.children().filter(|n| n.is_element()) {
+        let loc_name = loc.children()
+            .find(|n| n.has_tag_name("name"))
+            .and_then(|n| n.text())
+            .unwrap_or("")
+            .trim()
+            .to_string();
+
+        let objects = match loc.children().find(|n| n.has_tag_name("objects")) {
+            Some(o) => o,
+            None => continue,
+        };
+
+        for item in objects.children().filter(|n| n.has_tag_name("item")) {
+            let val = match item.children().find(|n| n.has_tag_name("value")) {
+                Some(v) => v,
+                None => continue,
+            };
+
+            for obj in val.children().filter(|n| n.is_element()) {
+                let obj_name = obj.children()
+                    .find(|n| n.has_tag_name("name"))
+                    .and_then(|n| n.text())
+                    .unwrap_or("")
+                    .trim()
+                    .to_string();
+
+                if obj_name != "Chest" {
+                    continue;
+                }
+
+                let x = item.children()
+                    .find(|n| n.has_tag_name("key"))
+                    .and_then(|k| k.children().find(|n| n.has_tag_name("Vector2")))
+                    .and_then(|v| v.children().find(|n| n.has_tag_name("X")))
+                    .and_then(|x| x.text())
+                    .and_then(|t| t.trim().parse::<f32>().ok())
+                    .unwrap_or(0.0);
+
+                let y = item.children()
+                    .find(|n| n.has_tag_name("key"))
+                    .and_then(|k| k.children().find(|n| n.has_tag_name("Vector2")))
+                    .and_then(|v| v.children().find(|n| n.has_tag_name("Y")))
+                    .and_then(|y| y.text())
+                    .and_then(|t| t.trim().parse::<f32>().ok())
+                    .unwrap_or(0.0);
+
+                let mut chest_items = Vec::new();
+                if let Some(items) = obj.children().find(|n| n.has_tag_name("items")) {
+                    for ci in items.children().filter(|n| n.is_element()) {
+                        let name = ci.children()
+                            .find(|n| n.has_tag_name("name"))
+                            .and_then(|n| n.text())
+                            .unwrap_or("")
+                            .trim()
+                            .to_string();
+
+                        let stack = ci.children()
+                            .find(|n| n.has_tag_name("stack"))
+                            .and_then(|n| n.text())
+                            .and_then(|t| t.trim().parse::<u32>().ok())
+                            .unwrap_or(1);
+
+                        if !name.is_empty() && name != "null" {
+                            chest_items.push(InventoryItem { name, count: stack });
+                        }
+                    }
+                }
+
+                if !chest_items.is_empty() {
+                    result.push(Chest {
+                        location: loc_name.clone(),
+                        x, y,
+                        items: chest_items,
+                    });
+                }
             }
         }
     }

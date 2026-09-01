@@ -11,6 +11,7 @@ struct CompactState {
     crop_summary: Vec<CropSummary>,
     top_friendships: Vec<String>,
     inventory: Vec<String>,
+    chests: Vec<String>,
 }
 
 #[derive(Serialize)]
@@ -52,6 +53,15 @@ pub fn execute(path: &str) -> anyhow::Result<String> {
         .map(|f| format!("{}({})", f.npc, f.points))
         .collect();
 
+    let chest_summary: Vec<String> = state.chests.iter()
+        .map(|c| {
+            let items: Vec<String> = c.items.iter()
+                .map(|i| format!("{}×{}", i.name, i.count))
+                .collect();
+            format!("{}({:.0},{:.0}): {}", c.location, c.x, c.y, items.join(", "))
+        })
+        .collect();
+
     let compact = CompactState {
         money: state.money,
         date: format!("第{}年 {} {}日", state.date.year, state.date.season, state.date.day),
@@ -71,6 +81,7 @@ pub fn execute(path: &str) -> anyhow::Result<String> {
         inventory: state.inventory.iter()
             .map(|i| format!("{}×{}", i.name, i.count))
             .collect(),
+        chests: chest_summary,
     };
 
     Ok(serde_json::to_string_pretty(&compact)?)
