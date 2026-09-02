@@ -203,14 +203,41 @@ async fn main() -> anyhow::Result<()> {
         ui::print_response(&result);
         ui::print_usage(&agent.usage_summary());
     } else {
-        use std::io::{self, BufRead, Write};
+        use std::io::{self, Write};
+        use std::sync::atomic::Ordering;
+
+        // R4: Ctrl-C 打断 — 单击打断当前任务，双击强制退出
+        let interrupt_flag = Arc::new(std::sync::atomic::AtomicBool::new(false));
+        {
+            let flag = Arc::clone(&interrupt_flag);
+            tokio::spawn(async move {
+                loop {
+                    if tokio::signal::ctrl_c().await.is_err() {
+                        continue;
+                    }
+                    if flag.swap(true, Ordering::SeqCst) {
+                        println!("\n强制退出");
+                        std::process::exit(130);
+                    }
+                    println!("\n⚠️ 正在打断（再按一次 Ctrl-C 强制退出）...");
+                }
+            });
+        }
+        agent.set_interrupt_flag(Arc::clone(&interrupt_flag));
+
+        println!("输入 /help 查看可用命令");
 
         loop {
             print!("你: ");
             io::stdout().flush()?;
 
             let mut input = String::new();
-            io::stdin().read_line(&mut input)?;
+            if io::stdin().read_line(&mut input).is_err() {
+                // Ctrl-C 打断了 stdin 读取：清除标记，重新等待输入
+                interrupt_flag.store(false, Ordering::SeqCst);
+                println!("（提示: 输入 /quit 退出程序）");
+                continue;
+            }
 
             let input = input.trim();
             if input.is_empty() {
@@ -221,6 +248,71 @@ async fn main() -> anyhow::Result<()> {
                 break;
             }
 
+            // 斜杠命令（R5: 历史管理）
+            if let Some(rest) = input.strip_prefix('/') {
+                let mut parts = rest.splitn(2, ' ');
+                let cmd = parts.next().unwrap_or("");
+                let arg = parts.next().map(str::trim).unwrap_or("");
+                match cmd {
+                    "help" => {
+                        println!("可用命令:");
+                        println!("  /save <名称>  保存当前会话");
+                        println!("  /load <名称>  加载已保存的会话");
+                        println!("  /sessions     列出所有已保存会话");
+                        println!("  /log          查看 Agent 完整工作轨迹");
+                        println!("  /usage        查看 Token 用量与成本");
+                        println!("  /quit         退出");
+                    }
+                    "usage" => {
+                        println!("📊 {}", agent.usage_summary());
+                    }
+                    "save" => {
+                        if arg.is_empty() {
+                            println!("用法: /save <名称>");
+                        } else {
+                            match agent.save_session(arg) {
+                                Ok(path) => println!("💾 已保存到 {}", path),
+                                Err(e) => eprintln!("保存失败: {}", e),
+                            }
+                        }
+                    }
+                    "load" => {
+                        if arg.is_empty() {
+                            println!("用法: /load <名称>");
+                        } else {
+                            match agent.load_session(arg) {
+                                Ok(n) => println!("📂 已加载会话「{}」（{} 条消息，上下文已恢复）", arg, n),
+                                Err(e) => eprintln!("{}", e),
+                            }
+                        }
+                    }
+                    "sessions" => {
+                        let list = agent::session::list_sessions();
+                        if list.is_empty() {
+                            println!("还没有已保存的会话，用 /save <名称> 保存");
+                        } else {
+                            println!("已保存的会话:");
+                            for (name, ts, count) in list {
+                                println!("  {} | {} | {} 条消息", name, agent::session::format_time(ts), count);
+                            }
+                        }
+                    }
+                    "log" => {
+                        let traj = agent.trajectory();
+                        println!("─── Agent 工作轨迹 ───");
+                        for line in traj {
+                            println!("{}", line);
+                        }
+                        println!("──────────────────────");
+                    }
+                    _ => println!("未知命令 /{}，输入 /help 查看", cmd),
+                }
+                continue;
+            }
+
+            // 每轮任务开始前清除打断标记
+            interrupt_flag.store(false, Ordering::SeqCst);
+
             match agent.run(input).await {
                 Ok(result) => {
                     ui::print_response(&result);
@@ -230,6 +322,8 @@ async fn main() -> anyhow::Result<()> {
                     eprintln!("Agent 出错: {}", e);
                 }
             }
+            // 任务结束后清除打断标记，避免影响下一轮
+            interrupt_flag.store(false, Ordering::SeqCst);
         }
     }
 

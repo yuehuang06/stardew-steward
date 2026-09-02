@@ -1,12 +1,14 @@
 use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
 
 use crate::config::Config;
 use crate::solver::schedule::DailySchedule;
 use crate::tools::{ToolRegistry, ToolCallRequest};
 use crate::usage::UsageTracker;
 use crate::validator::Validator;
-use super::message::Message;
+use super::message::{Message, Role};
 use super::progress::ProgressReporter;
+use super::session::{self, SavedSession};
 
 pub struct Agent {
     config: Config,
@@ -17,6 +19,7 @@ pub struct Agent {
     history: Vec<Message>,
     system_prompt: String,
     validator: Option<Validator>,
+    interrupt_flag: Option<Arc<AtomicBool>>,
 }
 
 impl Agent {
@@ -37,6 +40,7 @@ impl Agent {
             history: vec![Message::system(&system_prompt)],
             system_prompt,
             validator: None,
+            interrupt_flag: None,
         }
     }
 
@@ -44,8 +48,83 @@ impl Agent {
         self.validator = Some(v);
     }
 
+    /// R4: 注入打断标记（由 main 的 Ctrl-C 信号任务置位）
+    pub fn set_interrupt_flag(&mut self, flag: Arc<AtomicBool>) {
+        self.interrupt_flag = Some(flag);
+    }
+
+    fn interrupted(&self) -> bool {
+        self.interrupt_flag
+            .as_ref()
+            .map(|f| f.load(Ordering::SeqCst))
+            .unwrap_or(false)
+    }
+
     pub fn usage_summary(&self) -> String {
         self.usage.summary()
+    }
+
+    /// R5: 保存当前会话到 sessions/<name>.json，返回文件路径
+    pub fn save_session(&self, name: &str) -> anyhow::Result<String> {
+        let session = SavedSession {
+            saved_at: session::now_secs(),
+            message_count: self.history.len(),
+            messages: self.history.clone(),
+        };
+        std::fs::create_dir_all(session::sessions_dir())?;
+        let path = format!(
+            "{}/{}.json",
+            session::sessions_dir(),
+            session::sanitize_name(name)
+        );
+        std::fs::write(&path, serde_json::to_string_pretty(&session)?)?;
+        Ok(path)
+    }
+
+    /// R5: 加载会话，替换当前历史，返回消息数
+    pub fn load_session(&mut self, name: &str) -> anyhow::Result<usize> {
+        let path = format!(
+            "{}/{}.json",
+            session::sessions_dir(),
+            session::sanitize_name(name)
+        );
+        let text = std::fs::read_to_string(&path)
+            .map_err(|_| anyhow::anyhow!("会话「{}」不存在（用 /sessions 查看已保存的会话）", name))?;
+        let s: SavedSession = serde_json::from_str(&text)?;
+        self.history = s.messages;
+        Ok(self.history.len())
+    }
+
+    /// R5: 导出 Agent 完整工作轨迹（含工具调用，非黑盒）
+    pub fn trajectory(&self) -> Vec<String> {
+        self.history
+            .iter()
+            .map(|m| {
+                let role = match m.role {
+                    Role::System => "系统",
+                    Role::User => "用户",
+                    Role::Assistant => "Agent",
+                    Role::Tool => "工具",
+                };
+                let mut line = format!("[{}] {}", role, m.content.replace('\n', " "));
+                if let Some(tc) = &m.tool_calls {
+                    let names: Vec<String> = tc
+                        .as_array()
+                        .map(|a| {
+                            a.iter()
+                                .filter_map(|c| c["function"]["name"].as_str().map(String::from))
+                                .collect()
+                        })
+                        .unwrap_or_default();
+                    line.push_str(&format!("（调用工具: {}）", names.join(", ")));
+                }
+                if line.chars().count() > 200 {
+                    line = line.chars().take(200).collect();
+                    line.push_str("…");
+                }
+                line
+            })
+            .collect()
     }
 
     /// Agent 主循环
@@ -53,13 +132,37 @@ impl Agent {
         self.history.push(Message::user(user_message));
 
         for _step in 0..self.config.agent.max_steps {
-            if self.reporter.is_interrupted() {
+            if self.interrupted() {
                 return Ok("(用户已打断)".into());
             }
 
             self.reporter.on_step("正在思考...");
-            let response = self.call_llm().await?;
+            // R4: select! 让 LLM 调用可被 Ctrl-C 打断
+            enum LlmStep {
+                Done(anyhow::Result<LlmResponse>),
+                Stop,
+            }
+            let flag = self.interrupt_flag.clone();
+            let step = match flag {
+                Some(f) => tokio::select! {
+                    r = self.call_llm() => LlmStep::Done(r),
+                    _ = poll_flag(f) => LlmStep::Stop,
+                },
+                None => LlmStep::Done(self.call_llm().await),
+            };
             self.reporter.on_done();
+
+            let response = match step {
+                LlmStep::Done(Ok(resp)) => resp,
+                LlmStep::Done(Err(e)) => {
+                    println!("  ✗ 调用失败");
+                    return Err(e);
+                }
+                LlmStep::Stop => {
+                    println!("  ✗ 已打断");
+                    return Ok("(用户已打断本轮任务)".into());
+                }
+            };
 
             if let Some(tool_call) = response.tool_call {
                 if !response.assistant_content.is_empty() {
@@ -77,6 +180,10 @@ impl Agent {
                 self.reporter.on_done();
 
                 self.history.push(Message::tool(&result, &response.tool_call_id));
+
+                if self.interrupted() {
+                    return Ok("(用户已打断)".into());
+                }
                 continue;
             }
 
@@ -220,6 +327,16 @@ fn extract_json(text: &str) -> Option<&str> {
         }
     }
     None
+}
+
+/// 轮询打断标记，置位时返回（用于 select! 打断 LLM 调用）
+async fn poll_flag(flag: Arc<AtomicBool>) {
+    loop {
+        if flag.load(Ordering::SeqCst) {
+            return;
+        }
+        tokio::time::sleep(std::time::Duration::from_millis(100)).await;
+    }
 }
 
 /// 从工具调用参数中提取关键信息，生成人类可读的描述
