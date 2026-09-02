@@ -72,24 +72,35 @@ pub fn execute(path: &str) -> anyhow::Result<String> {
             if state.weather.is_lightning { "打雷" } else { "" },
             state.weather.tomorrow,
         ),
-        luck: format!(
-            "{}（{:+.3}，{}）",
-            match state.daily_luck {
-                v if v >= 0.07 => "今日运气极佳",
-                v if v >= 0.02 => "今日运气不错",
-                v if v > -0.02 => "今日运气平平",
-                v if v > -0.07 => "今日运气不佳",
-                _ => "今日非常倒霉",
-            },
-            state.daily_luck,
-            if state.daily_luck >= 0.02 {
-                "适合下矿/钓鱼（掉落和宝箱更好）"
-            } else if state.daily_luck < -0.02 {
-                "不建议下矿（掉落差），适合做农场活"
+        luck: {
+            // 分层与官方电视占卜频道一致（wiki: TV::getFortuneForecast）
+            let v = state.daily_luck;
+            let (tier, tv) = if v >= 0.1 {
+                ("运气极佳", "电视⭐最亮星星：神灵非常开心，会竭力降下好运")
+            } else if v > 0.07 {
+                ("运气非常好", "电视⭐星星：神灵非常开心，会竭力降下好运")
+            } else if v > 0.02 {
+                ("运气不错", "电视🔺金字塔：神灵心情不错，你会有一点额外好运")
+            } else if v == 0.0 {
+                ("绝对中立（罕见）", "电视〰️漩涡光：神灵绝对中立，非常少见")
+            } else if v >= -0.02 {
+                ("运气平平", "电视〰️漩涡光：神灵保持中立，这天由你自己掌控")
+            } else if v >= -0.07 {
+                ("运气不佳", "电视🦇蝙蝠：神灵有些恼火，运气不会站在你这边")
             } else {
+                ("运气很差", "电视💀骷髅：神灵非常不满，会尽力给你使绊子")
+            };
+            let advice = if v > 0.07 {
+                "强烈适合下矿/钓鱼（矿石掉落、宝石节点、宝箱概率都更高）"
+            } else if v > 0.02 {
+                "适合下矿/钓鱼（掉落和宝箱略好）"
+            } else if v >= -0.02 {
                 "运气影响不大，随意安排"
-            },
-        ),
+            } else {
+                "不建议下矿/钓鱼（掉落差、死亡损失更大），适合干农活、送礼、钓鱼以外的日常"
+            };
+            format!("{}（{:+.3}，{}。{}）", tier, v, tv, advice)
+        },
         skills: format!(
             "种地{} 矿{} 战{} 采{} 钓{}",
             state.skills.farming, state.skills.mining, state.skills.combat,

@@ -27,6 +27,10 @@ struct Cli {
     /// 只解析存档并打印结构化 JSON（不调 LLM）
     #[arg(long)]
     parse: bool,
+
+    /// 打印 Agent 视角的压缩存档摘要（不调 LLM）
+    #[arg(long)]
+    status: bool,
 }
 
 #[tokio::main]
@@ -46,6 +50,11 @@ async fn main() -> anyhow::Result<()> {
         let state = parser::parse(std::path::Path::new(&save_path))?;
         let json = serde_json::to_string_pretty(&state)?;
         println!("{}", json);
+        return Ok(());
+    }
+
+    if cli.status {
+        println!("{}", tools::read_save::execute(&save_path)?);
         return Ok(());
     }
 
