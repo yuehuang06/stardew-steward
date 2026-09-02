@@ -6,6 +6,8 @@ pub struct GameState {
     pub money: i32,
     pub date: GameDate,
     pub weather: Weather,
+    /// 每日运气（占卜频道），-0.1 ~ +0.1，影响下矿掉落/钓鱼宝箱
+    pub daily_luck: f64,
     pub skills: Skills,
     pub crops: Vec<CropStatus>,
     pub friendships: Vec<Friendship>,
@@ -74,6 +76,7 @@ impl GameState {
             money: 8640,
             date: GameDate { year: 1, season: "summer".into(), day: 15 },
             weather: Weather { is_raining: true, is_lightning: true, tomorrow: "Sun".into() },
+            daily_luck: 0.054,
             skills: Skills { farming: 6, mining: 2, combat: 1, foraging: 5, fishing: 4 },
             crops: vec![
                 CropStatus { item_id: 258, name: "蓝莓".into(), x: 60.0, y: 27.0, current_phase: 5, total_phases: 6, days_to_harvest: 0, is_dead: false },

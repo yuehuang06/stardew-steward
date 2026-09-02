@@ -7,6 +7,7 @@ struct CompactState {
     money: i32,
     date: String,
     weather: String,
+    luck: String,
     skills: String,
     crop_summary: Vec<CropSummary>,
     top_friendships: Vec<String>,
@@ -70,6 +71,24 @@ pub fn execute(path: &str) -> anyhow::Result<String> {
             if state.weather.is_raining { "下雨" } else { "晴天" },
             if state.weather.is_lightning { "打雷" } else { "" },
             state.weather.tomorrow,
+        ),
+        luck: format!(
+            "{}（{:+.3}，{}）",
+            match state.daily_luck {
+                v if v >= 0.07 => "今日运气极佳",
+                v if v >= 0.02 => "今日运气不错",
+                v if v > -0.02 => "今日运气平平",
+                v if v > -0.07 => "今日运气不佳",
+                _ => "今日非常倒霉",
+            },
+            state.daily_luck,
+            if state.daily_luck >= 0.02 {
+                "适合下矿/钓鱼（掉落和宝箱更好）"
+            } else if state.daily_luck < -0.02 {
+                "不建议下矿（掉落差），适合做农场活"
+            } else {
+                "运气影响不大，随意安排"
+            },
         ),
         skills: format!(
             "种地{} 矿{} 战{} 采{} 钓{}",

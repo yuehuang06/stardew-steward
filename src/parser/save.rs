@@ -60,6 +60,12 @@ fn parse_xml(xml: &str) -> anyhow::Result<GameState> {
         .trim()
         .to_string();
 
+    let daily_luck = root.children()
+        .find(|n| n.has_tag_name("dailyLuck"))
+        .and_then(|n| n.text())
+        .and_then(|t| t.trim().parse::<f64>().ok())
+        .unwrap_or(0.0);
+
     let skills = parse_skills(&player);
 
     let crops = parse_crops(&root);
@@ -74,6 +80,7 @@ fn parse_xml(xml: &str) -> anyhow::Result<GameState> {
         money,
         date: GameDate { year, season, day },
         weather: Weather { is_raining, is_lightning, tomorrow },
+        daily_luck,
         skills,
         crops,
         friendships,
