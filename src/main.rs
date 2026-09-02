@@ -227,19 +227,47 @@ async fn main() -> anyhow::Result<()> {
 
         println!("输入 /help 查看可用命令");
 
-        loop {
-            print!("你: ");
-            io::stdout().flush()?;
-
-            let mut input = String::new();
-            if io::stdin().read_line(&mut input).is_err() {
-                // Ctrl-C 打断了 stdin 读取：清除标记，重新等待输入
-                interrupt_flag.store(false, Ordering::SeqCst);
-                println!("（提示: 输入 /quit 退出程序）");
-                continue;
+        // stdin 读取放独立线程，通过 channel 传给主循环
+        // —— Agent 工作期间也能立即响应新输入（如中途 /quit）
+        let (stdin_tx, mut stdin_rx) = tokio::sync::mpsc::channel::<String>(16);
+        tokio::task::spawn_blocking(move || {
+            let stdin = std::io::stdin();
+            loop {
+                let mut line = String::new();
+                match stdin.read_line(&mut line) {
+                    Ok(0) => break,          // EOF
+                    Ok(_) => {
+                        if stdin_tx.blocking_send(line).is_err() {
+                            break;
+                        }
+                    }
+                    Err(_) => {
+                        // Ctrl-C 等信号打断了读取，重试
+                        std::thread::sleep(std::time::Duration::from_millis(100));
+                    }
+                }
             }
+        });
 
-            let input = input.trim();
+        let mut pending: Vec<String> = Vec::new();
+        let mut quit_requested = false;
+
+        loop {
+            // 取下一条输入（优先消费排队消息）
+            let raw = if !pending.is_empty() {
+                let first = pending.remove(0);
+                println!("你(排队): {}", first);
+                first
+            } else {
+                print!("你: ");
+                io::stdout().flush()?;
+                match stdin_rx.recv().await {
+                    Some(line) => line,
+                    None => break, // stdin 关闭
+                }
+            };
+
+            let input = raw.trim().to_string();
             if input.is_empty() {
                 continue;
             }
@@ -261,7 +289,7 @@ async fn main() -> anyhow::Result<()> {
                         println!("  /sessions     列出所有已保存会话");
                         println!("  /log          查看 Agent 完整工作轨迹");
                         println!("  /usage        查看 Token 用量与成本");
-                        println!("  /quit         退出");
+                        println!("  /quit         退出（Agent 工作中也可立即退出）");
                     }
                     "usage" => {
                         println!("📊 {}", agent.usage_summary());
@@ -313,9 +341,40 @@ async fn main() -> anyhow::Result<()> {
             // 每轮任务开始前清除打断标记
             interrupt_flag.store(false, Ordering::SeqCst);
 
-            match agent.run(input).await {
-                Ok(result) => {
-                    ui::print_response(&result);
+            // 运行 Agent，同时监听新输入（中途 /quit 立即打断退出）
+            let result = {
+                let run_fut = agent.run(&input);
+                tokio::pin!(run_fut);
+                loop {
+                    tokio::select! {
+                        r = &mut run_fut => break r,
+                        maybe_line = stdin_rx.recv() => {
+                            match maybe_line {
+                                Some(line) => {
+                                    let t = line.trim().to_string();
+                                    if t == "/quit" || t == "/exit" {
+                                        quit_requested = true;
+                                        interrupt_flag.store(true, Ordering::SeqCst);
+                                        println!("\n⚠️ 收到退出请求，正在打断当前任务...");
+                                    } else if !t.is_empty() {
+                                        println!("\n（Agent 忙碌中，输入已排队）");
+                                        pending.push(t);
+                                    }
+                                }
+                                None => {
+                                    // stdin 关闭
+                                    quit_requested = true;
+                                    interrupt_flag.store(true, Ordering::SeqCst);
+                                }
+                            }
+                        }
+                    }
+                }
+            };
+
+            match result {
+                Ok(text) => {
+                    ui::print_response(&text);
                     ui::print_usage(&agent.usage_summary());
                 }
                 Err(e) => {
@@ -324,6 +383,11 @@ async fn main() -> anyhow::Result<()> {
             }
             // 任务结束后清除打断标记，避免影响下一轮
             interrupt_flag.store(false, Ordering::SeqCst);
+
+            if quit_requested {
+                println!("再见，祝你农场丰收！");
+                break;
+            }
         }
     }
 
