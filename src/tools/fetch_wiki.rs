@@ -79,13 +79,12 @@ pub async fn execute(keyword: &str) -> anyhow::Result<String> {
 fn extract_wiki_info(wikitext: &str, title: &str) -> String {
     let mut info = Vec::new();
 
-    // 解析 Infobox 模板字段
+    // 解析 Infobox 模板字段（用花括号深度匹配，避免内嵌模板 {{...}} 提前截断）
     let infobox_start = wikitext.find("{{Infobox");
-    if let Some(start) = infobox_start {
-        // 找到匹配的 }}
-        let info_section = &wikitext[start..];
-        let end = info_section.find("}}").unwrap_or(info_section.len());
-        let infobox = &info_section[..end];
+    let infobox_end: Option<usize> = infobox_start.and_then(|start| find_matching_braces(wikitext, start));
+    
+    if let (Some(start), Some(end)) = (infobox_start, infobox_end) {
+        let infobox = &wikitext[start..end];
 
         for line in infobox.lines() {
             let line = line.trim();
@@ -103,8 +102,11 @@ fn extract_wiki_info(wikitext: &str, title: &str) -> String {
     }
 
     // 提取首段文字（Infobox 之后的第一段非空文本）
-    let after_infobox = wikitext.find("}}").map(|i| &wikitext[i + 2..]).unwrap_or(wikitext);
-    for para in after_infobox.split("\n\n") {
+    let after = match infobox_end {
+        Some(i) => &wikitext[i..],
+        None => wikitext,
+    };
+    for para in after.split("\n\n") {
         let cleaned = clean_wiki_markup(para.trim());
         if cleaned.len() > 20 && !cleaned.starts_with("{{") && !cleaned.starts_with("==") {
             info.push(format!("描述: {}", cleaned));
@@ -117,6 +119,28 @@ fn extract_wiki_info(wikitext: &str, title: &str) -> String {
     } else {
         info.join("\n")
     }
+}
+
+/// 找到 {{ 的匹配结束位置（考虑嵌套模板的花括号深度）
+fn find_matching_braces(text: &str, start: usize) -> Option<usize> {
+    let bytes = text.as_bytes();
+    let mut depth = 0i32;
+    let mut i = start;
+    while i + 1 < bytes.len() {
+        if bytes[i] == b'{' && bytes[i + 1] == b'{' {
+            depth += 1;
+            i += 2;
+        } else if bytes[i] == b'}' && bytes[i + 1] == b'}' {
+            depth -= 1;
+            i += 2;
+            if depth == 0 {
+                return Some(i);
+            }
+        } else {
+            i += 1;
+        }
+    }
+    None
 }
 
 /// 清理 wiki 标记（{{...}}, [[...]], '''...''', <span> 等）
