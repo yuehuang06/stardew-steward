@@ -14,8 +14,8 @@ struct WikiResult {
 pub async fn execute(keyword: &str) -> anyhow::Result<String> {
     let client = reqwest::Client::new();
 
-    // 1. 搜索页面标题
-    let search_url = "https://stardewvalleywiki.com/mediawiki/api.php";
+    // 1. 搜索页面标题（用中文 wiki，中文关键词直接命中）
+    let search_url = "https://zh.stardewvalleywiki.com/mediawiki/api.php";
     let search_resp: serde_json::Value = client
         .get(search_url)
         .query(&[

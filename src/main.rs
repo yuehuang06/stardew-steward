@@ -221,13 +221,13 @@ async fn main() -> anyhow::Result<()> {
     // fetch_wiki: LLM 按需爬星露谷 wiki 补充本地知识库没有的数据
     tools.register(
         "fetch_wiki",
-        "从星露谷 wiki 搜索并提取结构化信息（作物、NPC、鱼类、物品等）。当本地知识库 query_knowledge 查不到时使用此工具。",
+        "从星露谷中文 wiki 搜索并提取结构化信息（作物、NPC、鱼类、物品等）。当本地知识库 query_knowledge 查不到时使用此工具。支持中文关键词搜索。",
         serde_json::json!({
             "type": "object",
             "properties": {
                 "keyword": {
                     "type": "string",
-                    "description": "搜索关键词（英文效果更好，如 Hot Pepper, Abigail, Catfish）"
+                    "description": "搜索关键词（中英文均可，如 夏季亮片, Abigail, 鲶鱼）"
                 }
             },
             "required": ["keyword"]
@@ -248,7 +248,7 @@ async fn main() -> anyhow::Result<()> {
         规则：\n\
         - 每次被提问时，先调 read_save 读取最新存档状态\n\
         - 需要查询作物/NPC/鱼类的具体数据时，调 query_knowledge，可在 keyword 中传入多个关键词用空格分隔（如 蓝莓 辣椒 啤酒花）\n\
-        - 如果 query_knowledge 查不到，调 fetch_wiki 从星露谷 wiki 在线搜索（英文关键词效果更好，如 Summer Spangle, Hot Pepper, Catfish）。每次查询使用不同的关键词时，最多调用 2 次 fetch_wiki，之后用已有结果回答\n\
+        - 如果 query_knowledge 查不到，调 fetch_wiki 从星露谷中文 wiki 在线搜索（中英文关键词均可，如 夏季亮片, Abigail, 鲶鱼）。每次查询使用不同的关键词时，最多调用 2 次 fetch_wiki，之后用已有结果回答\n\
         - 如果用户的问题模糊到无法确定查询目标（如「那个花」），先反问用户确认，不要盲目猜测后查询\n\
         - 用户要求安排日程时，调 auto_schedule 工具，返回的 JSON 已是最终日程格式，直接原样输出即可（不要修改字段名、不要再调其他工具补充信息）\n\
         - 用中文回答\n\
