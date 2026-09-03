@@ -248,7 +248,8 @@ async fn main() -> anyhow::Result<()> {
         规则：\n\
         - 每次被提问时，先调 read_save 读取最新存档状态\n\
         - 需要查询作物/NPC/鱼类的具体数据时，调 query_knowledge，可在 keyword 中传入多个关键词用空格分隔（如 蓝莓 辣椒 啤酒花）\n\
-        - 如果 query_knowledge 查不到，调 fetch_wiki 从星露谷 wiki 在线搜索（英文关键词效果更好）\n\
+        - 如果 query_knowledge 查不到，最多调用 fetch_wiki 1 次，使用英文关键词搜索（如 Summer Spangle, Hot Pepper, Catfish）。如果 fetch_wiki 也没有返回有用结果，直接用你自己的知识回答，不要反复尝试不同的关键词\n\
+        - 如果用户的问题模糊到无法确定查询目标（如「那个花」），先反问用户确认，不要盲目猜测后查询\n\
         - 用户要求安排日程时，调 auto_schedule 工具，返回的 JSON 已是最终日程格式，直接原样输出即可（不要修改字段名、不要再调其他工具补充信息）\n\
         - 用中文回答\n\
         - 存档路径: {}\n\
