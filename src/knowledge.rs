@@ -89,11 +89,11 @@ impl KnowledgeBase {
         }
 
         let crops_text = std::fs::read_to_string("data/crops.json")
-            .unwrap_or_else(|_| include_str!("../../data/crops.json").to_string());
+            .unwrap_or_else(|_| include_str!("../data/crops.json").to_string());
         let npcs_text = std::fs::read_to_string("data/npcs.json")
-            .unwrap_or_else(|_| include_str!("../../data/npcs.json").to_string());
+            .unwrap_or_else(|_| include_str!("../data/npcs.json").to_string());
         let fish_text = std::fs::read_to_string("data/fish.json")
-            .unwrap_or_else(|_| include_str!("../../data/fish.json").to_string());
+            .unwrap_or_else(|_| include_str!("../data/fish.json").to_string());
 
         self.import_crops(&crops_text)?;
         self.import_npcs(&npcs_text)?;
