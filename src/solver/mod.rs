@@ -8,6 +8,7 @@
 pub mod task;
 pub mod greedy;
 pub mod schedule;
+pub mod auto_tasks;
 
 pub use task::{Task, Schedule};
 pub use schedule::{DailySchedule, ScheduleTask};

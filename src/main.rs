@@ -139,6 +139,79 @@ async fn main() -> anyhow::Result<()> {
         },
     );
 
+    // auto_schedule: 求解器直接吃 GameState + 知识库，自动生成任务
+    let auto_save = save_path.clone();
+    let auto_kb = Arc::clone(&kb);
+    tools.register(
+        "auto_schedule",
+        "自动分析存档并生成最优日程。返回的 JSON 已经是最终日程格式，直接输出给用户即可，不需要再调其他工具或转换格式。",
+        serde_json::json!({
+            "type": "object",
+            "properties": {}
+        }),
+        move |_| {
+            let state = parser::parse(std::path::Path::new(&auto_save))?;
+            let tasks = solver::auto_tasks::generate_tasks(&state, &auto_kb);
+            let time_budget = 14.0;
+            let energy_budget = 270;
+            let solved = solver::greedy::solve(tasks, time_budget, energy_budget);
+
+            // 直接转成 DailySchedule 格式，LLM 不需要再转换
+            let schedule_tasks: Vec<solver::schedule::ScheduleTask> = solved.tasks.iter().map(|t| {
+                let action = match t.priority {
+                    solver::task::Priority::Must => {
+                        if t.name.contains("收获") { "harvest" }
+                        else if t.name.contains("浇水") { "water" }
+                        else { "other" }
+                    }
+                    solver::task::Priority::Should => {
+                        if t.name.contains("送礼") { "gift" }
+                        else if t.name.contains("出货") { "shop" }
+                        else { "other" }
+                    }
+                    solver::task::Priority::Could => {
+                        if t.name.contains("下矿") { "mine" }
+                        else if t.name.contains("钓鱼") { "fish" }
+                        else { "other" }
+                    }
+                }.to_string();
+                solver::schedule::ScheduleTask {
+                    action,
+                    description: t.name.clone(),
+                    time_cost: t.time_cost,
+                    cost: if t.money_gain < 0 { -t.money_gain } else { 0 },
+                    income: if t.money_gain > 0 { t.money_gain } else { 0 },
+                    priority: format!("{:?}", t.priority).to_lowercase(),
+                }
+            }).collect();
+
+            let daily = solver::schedule::DailySchedule {
+                summary: format!(
+                    "{} 夏{}日 | 资金{}g | 运气{:+.3} | 选了{}项任务，预计收入{}g",
+                    state.date.season, state.date.day, state.money,
+                    state.daily_luck, schedule_tasks.len(), solved.estimated_income,
+                ),
+                tasks: schedule_tasks,
+                total_time: solved.total_time,
+                total_cost: 0,
+                total_income: solved.estimated_income,
+                notes: {
+                    let mut n = Vec::new();
+                    if state.weather.is_raining {
+                        n.push(format!("今天下雨，不用浇水"));
+                    }
+                    if state.daily_luck > 0.07 {
+                        n.push(format!("运气极佳，强烈推荐下矿/钓鱼"));
+                    } else if state.daily_luck < -0.07 {
+                        n.push(format!("运气很差，不建议下矿"));
+                    }
+                    n
+                },
+            };
+            Ok(serde_json::to_string_pretty(&daily)?)
+        },
+    );
+
     let system_prompt = format!(
         "你是「星露谷农场管家」，一个专为星露谷物语休闲玩家设计的 AI 助手。\n\
         你的职责是：\n\
@@ -149,6 +222,7 @@ async fn main() -> anyhow::Result<()> {
         规则：\n\
         - 每次被提问时，先调 read_save 读取最新存档状态\n\
         - 需要查询作物/NPC/鱼类的具体数据时，调 query_knowledge，可在 keyword 中传入多个关键词用空格分隔（如 蓝莓 辣椒 啤酒花）\n\
+        - 用户要求安排日程时，调 auto_schedule 工具，返回的 JSON 已是最终日程格式，直接原样输出即可（不要修改字段名、不要再调其他工具补充信息）\n\
         - 用中文回答\n\
         - 存档路径: {}\n\
         \n\

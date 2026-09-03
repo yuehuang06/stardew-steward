@@ -227,4 +227,18 @@ impl KnowledgeBase {
             Ok(results.join("\n"))
         }
     }
+
+    /// 精确查询作物售价（供求解器用）
+    pub fn get_crop_price(&self, name: &str) -> Option<i32> {
+        self.conn
+            .query_row("SELECT sell_price FROM crops WHERE name = ?", [name], |row| row.get(0))
+            .ok()
+    }
+
+    /// 精确查询 NPC 生日（供求解器用）
+    pub fn get_npc_birthday(&self, name: &str) -> Option<String> {
+        self.conn
+            .query_row("SELECT birthday FROM npcs WHERE name = ?", [name], |row| row.get(0))
+            .ok()
+    }
 }
