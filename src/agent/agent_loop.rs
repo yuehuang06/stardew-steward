@@ -20,6 +20,7 @@ pub struct Agent {
     system_prompt: String,
     validator: Option<Validator>,
     interrupt_flag: Option<Arc<AtomicBool>>,
+    session_title: Option<String>,
 }
 
 impl Agent {
@@ -41,6 +42,7 @@ impl Agent {
             system_prompt,
             validator: None,
             interrupt_flag: None,
+            session_title: None,
         }
     }
 
@@ -65,6 +67,21 @@ impl Agent {
     }
 
     /// 简短用量: "¥0.05 · 14K/200K tok"（用于 prompt 前缀实时显示）
+    /// 获取当前会话标题
+    pub fn session_title(&self) -> String {
+        self.session_title.clone().unwrap_or_else(|| {
+            // 没有标题时，用第一条用户消息截取前 20 字
+            self.history.iter()
+                .find(|m| matches!(m.role, Role::User))
+                .map(|m| {
+                    let t = m.content.trim();
+                    if t.chars().count() <= 20 { t.to_string() }
+                    else { format!("{}…", t.chars().take(20).collect::<String>()) }
+                })
+                .unwrap_or_else(|| "untitled".to_string())
+        })
+    }
+
     pub fn usage_brief(&self) -> String {
         let used = self.usage.total_input_tokens() + self.usage.total_output_tokens();
         let budget = self.usage.budget();
@@ -90,9 +107,10 @@ impl Agent {
         Ok(path)
     }
 
-    /// R5: 自动保存（用时间戳命名）
+    /// R5: 自动保存（用会话标题命名，标题取自用户首条消息）
     pub fn auto_save_session(&self) -> Option<String> {
-        match self.save_session(&session::auto_name()) {
+        let title = self.session_title();
+        match self.save_session(&title) {
             Ok(path) => Some(path),
             Err(_) => None,
         }
