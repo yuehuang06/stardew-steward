@@ -80,8 +80,9 @@ async fn main() -> anyhow::Result<()> {
         }),
         move |args| {
             let path = args["path"].as_str()
-                .unwrap_or(&default_save);
-            tools::read_save::execute(path)
+                .map(|s| s.to_string())
+                .unwrap_or_else(|| default_save.clone());
+            async move { tools::read_save::execute(&path) }
         },
     );
 
@@ -100,8 +101,9 @@ async fn main() -> anyhow::Result<()> {
             "required": ["keyword"]
         }),
         move |args| {
-            let keyword = args["keyword"].as_str().unwrap_or("");
-            tools::query_knowledge::execute(&kb_clone, keyword)
+            let keyword = args["keyword"].as_str().unwrap_or("").to_string();
+            let kb = kb_clone.clone();
+            async move { tools::query_knowledge::execute(&kb, &keyword) }
         },
     );
 
@@ -130,7 +132,7 @@ async fn main() -> anyhow::Result<()> {
             },
             "required": ["tasks", "time_budget", "energy_budget"]
         }),
-        |args| {
+        |args| async move {
             let tasks: Vec<solver::task::Task> = serde_json::from_value(args["tasks"].clone())
                 .unwrap_or_default();
             let time_budget = args["time_budget"].as_f64().unwrap_or(12.0) as f32;
@@ -150,8 +152,11 @@ async fn main() -> anyhow::Result<()> {
             "properties": {}
         }),
         move |_| {
-            let state = parser::parse(std::path::Path::new(&auto_save))?;
-            let tasks = solver::auto_tasks::generate_tasks(&state, &auto_kb);
+            let save = auto_save.clone();
+            let kb = auto_kb.clone();
+            async move {
+            let state = parser::parse(std::path::Path::new(&save))?;
+            let tasks = solver::auto_tasks::generate_tasks(&state, &kb);
             let time_budget = 14.0;
             let energy_budget = 270;
             let solved = solver::greedy::solve(tasks, time_budget, energy_budget);
@@ -209,6 +214,27 @@ async fn main() -> anyhow::Result<()> {
                 },
             };
             Ok(serde_json::to_string_pretty(&daily)?)
+            }
+        },
+    );
+
+    // fetch_wiki: LLM 按需爬星露谷 wiki 补充本地知识库没有的数据
+    tools.register(
+        "fetch_wiki",
+        "从星露谷 wiki 搜索并提取结构化信息（作物、NPC、鱼类、物品等）。当本地知识库 query_knowledge 查不到时使用此工具。",
+        serde_json::json!({
+            "type": "object",
+            "properties": {
+                "keyword": {
+                    "type": "string",
+                    "description": "搜索关键词（英文效果更好，如 Hot Pepper, Abigail, Catfish）"
+                }
+            },
+            "required": ["keyword"]
+        }),
+        |args| {
+            let keyword = args["keyword"].as_str().unwrap_or("").to_string();
+            async move { tools::fetch_wiki::execute(&keyword).await }
         },
     );
 
@@ -222,6 +248,7 @@ async fn main() -> anyhow::Result<()> {
         规则：\n\
         - 每次被提问时，先调 read_save 读取最新存档状态\n\
         - 需要查询作物/NPC/鱼类的具体数据时，调 query_knowledge，可在 keyword 中传入多个关键词用空格分隔（如 蓝莓 辣椒 啤酒花）\n\
+        - 如果 query_knowledge 查不到，调 fetch_wiki 从星露谷 wiki 在线搜索（英文关键词效果更好）\n\
         - 用户要求安排日程时，调 auto_schedule 工具，返回的 JSON 已是最终日程格式，直接原样输出即可（不要修改字段名、不要再调其他工具补充信息）\n\
         - 用中文回答\n\
         - 存档路径: {}\n\
