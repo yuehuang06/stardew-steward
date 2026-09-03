@@ -369,7 +369,7 @@ async fn main() -> anyhow::Result<()> {
                 println!("你(排队): {}", first);
                 first
             } else {
-                print!("你: ");
+                print!("你 [{}]: ", agent.usage_brief());
                 io::stdout().flush()?;
                 match stdin_rx.recv().await {
                     Some(line) => line,
@@ -419,7 +419,7 @@ async fn main() -> anyhow::Result<()> {
                             println!("用法: /load <名称>");
                         } else {
                             match agent.load_session(arg) {
-                                Ok(n) => println!("📂 已加载会话「{}」（{} 条消息，上下文已恢复）", arg, n),
+                                Ok((n, rounds)) => println!("📂 已加载会话「{}」（{} 条消息，{} 轮交互，上下文已恢复）", arg, n, rounds),
                                 Err(e) => eprintln!("{}", e),
                             }
                         }
@@ -427,11 +427,11 @@ async fn main() -> anyhow::Result<()> {
                     "sessions" => {
                         let list = agent::session::list_sessions();
                         if list.is_empty() {
-                            println!("还没有已保存的会话，用 /save <名称> 保存");
+                            println!("还没有已保存的会话");
                         } else {
                             println!("已保存的会话:");
-                            for (name, ts, count) in list {
-                                println!("  {} | {} | {} 条消息", name, agent::session::format_time(ts), count);
+                            for (name, ts, count, rounds) in list {
+                                println!("  {} | {} | {} 条消息 | {} 轮交互", name, agent::session::format_time(ts), count, rounds);
                             }
                         }
                     }
@@ -486,6 +486,10 @@ async fn main() -> anyhow::Result<()> {
                 Ok(text) => {
                     ui::print_response(&text);
                     ui::print_usage(&agent.usage_summary());
+                    // 自动保存会话
+                    if let Some(path) = agent.auto_save_session() {
+                        println!("💾 会话已自动保存: {}", path);
+                    }
                 }
                 Err(e) => {
                     eprintln!("Agent 出错: {}", e);

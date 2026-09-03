@@ -46,6 +46,11 @@ impl UsageTracker {
         self.total_input_tokens + self.total_output_tokens >= self.budget
     }
 
+    pub fn total_input_tokens(&self) -> u64 { self.total_input_tokens }
+    pub fn total_output_tokens(&self) -> u64 { self.total_output_tokens }
+    pub fn budget(&self) -> u64 { self.budget }
+    pub fn total_cost(&self) -> f64 { self.total_cost }
+
     pub fn summary(&self) -> String {
         format!(
             "Token: {} in / {} out | 成本: ¥{:.4} | 预算: {} tokens",

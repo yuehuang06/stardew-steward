@@ -64,11 +64,20 @@ impl Agent {
         self.usage.summary()
     }
 
+    /// 简短用量: "¥0.05 · 14K/200K tok"（用于 prompt 前缀实时显示）
+    pub fn usage_brief(&self) -> String {
+        let used = self.usage.total_input_tokens() + self.usage.total_output_tokens();
+        let budget = self.usage.budget();
+        let cost = self.usage.total_cost();
+        format!("¥{:.4} · {}K/{}K tok", cost, used / 1000, budget / 1000)
+    }
+
     /// R5: 保存当前会话到 sessions/<name>.json，返回文件路径
     pub fn save_session(&self, name: &str) -> anyhow::Result<String> {
         let session = SavedSession {
             saved_at: session::now_secs(),
             message_count: self.history.len(),
+            interaction_rounds: session::count_rounds(&self.history),
             messages: self.history.clone(),
         };
         std::fs::create_dir_all(session::sessions_dir())?;
@@ -81,8 +90,16 @@ impl Agent {
         Ok(path)
     }
 
-    /// R5: 加载会话，替换当前历史，返回消息数
-    pub fn load_session(&mut self, name: &str) -> anyhow::Result<usize> {
+    /// R5: 自动保存（用时间戳命名）
+    pub fn auto_save_session(&self) -> Option<String> {
+        match self.save_session(&session::auto_name()) {
+            Ok(path) => Some(path),
+            Err(_) => None,
+        }
+    }
+
+    /// R5: 加载会话，替换当前历史，返回(消息数, 交互轮数)
+    pub fn load_session(&mut self, name: &str) -> anyhow::Result<(usize, usize)> {
         let path = format!(
             "{}/{}.json",
             session::sessions_dir(),
@@ -91,8 +108,9 @@ impl Agent {
         let text = std::fs::read_to_string(&path)
             .map_err(|_| anyhow::anyhow!("会话「{}」不存在（用 /sessions 查看已保存的会话）", name))?;
         let s: SavedSession = serde_json::from_str(&text)?;
+        let rounds = s.interaction_rounds;
         self.history = s.messages;
-        Ok(self.history.len())
+        Ok((self.history.len(), rounds))
     }
 
     /// R5: 导出 Agent 完整工作轨迹（含工具调用，非黑盒）
