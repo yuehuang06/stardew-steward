@@ -338,27 +338,8 @@ async fn main() -> anyhow::Result<()> {
 
         println!("输入 /help 查看可用命令");
 
-        // stdin 读取放独立线程，通过 channel 传给主循环
-        // —— Agent 工作期间也能立即响应新输入（如中途 /quit）
-        let (stdin_tx, mut stdin_rx) = tokio::sync::mpsc::channel::<String>(16);
-        tokio::task::spawn_blocking(move || {
-            let stdin = std::io::stdin();
-            loop {
-                let mut line = String::new();
-                match stdin.read_line(&mut line) {
-                    Ok(0) => break,          // EOF
-                    Ok(_) => {
-                        if stdin_tx.blocking_send(line).is_err() {
-                            break;
-                        }
-                    }
-                    Err(_) => {
-                        // Ctrl-C 等信号打断了读取，重试
-                        std::thread::sleep(std::time::Duration::from_millis(100));
-                    }
-                }
-            }
-        });
+        // rustyline: 正确处理 UTF-8 退格、行编辑、历史记录
+        let mut rl = rustyline::DefaultEditor::new().expect("rustyline init");
 
         let mut pending: Vec<String> = Vec::new();
         let mut quit_requested = false;
@@ -370,11 +351,21 @@ async fn main() -> anyhow::Result<()> {
                 println!("你(排队): {}", first);
                 first
             } else {
-                print!("你 [{}]: ", agent.usage_brief());
-                io::stdout().flush()?;
-                match stdin_rx.recv().await {
-                    Some(line) => line,
-                    None => break, // stdin 关闭
+                let prompt = format!("你 [{}]: ", agent.usage_brief());
+                match rl.readline(&prompt) {
+                    Ok(line) => {
+                        let _ = rl.add_history_entry(&line);
+                        line
+                    }
+                    Err(rustyline::error::ReadlineError::Interrupted) => {
+                        // Ctrl-C 在输入时：忽略，继续等待
+                        continue;
+                    }
+                    Err(rustyline::error::ReadlineError::Eof) => break,
+                    Err(e) => {
+                        eprintln!("输入错误: {}", e);
+                        break;
+                    }
                 }
             };
 
@@ -452,42 +443,12 @@ async fn main() -> anyhow::Result<()> {
             // 每轮任务开始前清除打断标记
             interrupt_flag.store(false, Ordering::SeqCst);
 
-            // 运行 Agent，同时监听新输入（中途 /quit 立即打断退出）
-            let result = {
-                let run_fut = agent.run(&input);
-                tokio::pin!(run_fut);
-                loop {
-                    tokio::select! {
-                        r = &mut run_fut => break r,
-                        maybe_line = stdin_rx.recv() => {
-                            match maybe_line {
-                                Some(line) => {
-                                    let t = line.trim().to_string();
-                                    if t == "/quit" || t == "/exit" {
-                                        quit_requested = true;
-                                        interrupt_flag.store(true, Ordering::SeqCst);
-                                        println!("\n⚠️ 收到退出请求，正在打断当前任务...");
-                                    } else if !t.is_empty() {
-                                        println!("\n（Agent 忙碌中，输入已排队）");
-                                        pending.push(t);
-                                    }
-                                }
-                                None => {
-                                    // stdin 关闭
-                                    quit_requested = true;
-                                    interrupt_flag.store(true, Ordering::SeqCst);
-                                }
-                            }
-                        }
-                    }
-                }
-            };
-
+            // 运行 Agent（Ctrl-C 可打断，通过 interrupt_flag 实现）
+            let result = agent.run(&input).await;
             match result {
                 Ok(text) => {
                     ui::print_response(&text);
                     ui::print_usage(&agent.usage_summary());
-                    // 自动保存会话
                     if let Some(path) = agent.auto_save_session() {
                         println!("💾 会话已自动保存: {}", path);
                     }
@@ -496,7 +457,6 @@ async fn main() -> anyhow::Result<()> {
                     eprintln!("Agent 出错: {}", e);
                 }
             }
-            // 任务结束后清除打断标记，避免影响下一轮
             interrupt_flag.store(false, Ordering::SeqCst);
 
             if quit_requested {
