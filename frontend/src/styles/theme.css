@@ -70,10 +70,10 @@ body {
     background: var(--sd-cream);
     border: none;
     box-shadow:
-        inset 3px 0 0 0 #C7925E,
-        inset 0 -3px 0 0 #C7925E,
-        inset -3px 0 0 0 #F7E4AA,
-        inset 0 3px 0 0 #F7E4AA;
+        inset 3px 0 0 -3px #C7925E,
+        inset 0 -3px 0 -3px #C7925E,
+        inset -3px 0 0 -3px #F7E4AA,
+        inset 0 3px 0 -3px #F7E4AA;
     border-radius: 0;
 }
 
@@ -81,7 +81,7 @@ body {
 .sd-btn {
     background: var(--sd-wood);
     color: var(--sd-cream);
-    border: 2px solid var(--sd-wood-darker);
+    border: 3px solid var(--sd-wood-darker);
     box-shadow:
         inset 1px 1px 0 var(--sd-wood-light),
         inset -1px -1px 0 var(--sd-wood-darker);
@@ -111,10 +111,10 @@ body {
     color: var(--sd-text);
     border: none;
     box-shadow:
-        inset 3px 0 0 0 #F7E4AA,
-        inset 0 -3px 0 0 #F7E4AA,
-        inset -3px 0 0 0 #C7925E,
-        inset 0 3px 0 0 #C7925E;
+        inset 3px 0 0 -3px #F7E4AA,
+        inset 0 -3px 0 -3px #F7E4AA,
+        inset -3px 0 0 -3px #C7925E,
+        inset 0 3px 0 -3px #C7925E;
     padding: 9px 11px;
     font-size: var(--sd-font-size);
     border-radius: 0;

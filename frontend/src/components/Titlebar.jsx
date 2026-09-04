@@ -26,8 +26,7 @@ export function Titlebar({ status, expanded, onToggle, onRefresh, onTop, onToggl
             padding: 0,
             lineHeight: 1,
             background: "var(--sd-red)",
-            fontSize: "11px",
-            border: "1px solid var(--sd-wood-dark)",
+            border: "3px solid var(--sd-wood-darker)",
             boxShadow: "none",
           }}
           onClick={() => getCurrentWindow().close()}

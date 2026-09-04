@@ -5,7 +5,7 @@ import { listen } from "@tauri-apps/api/event";
 export function useChat() {
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [progress, setProgress] = useState(null);
+  const [progress, setProgress] = useState([]);
   const [error, setError] = useState(null);
   const unlistenRef = useRef([]);
   const typingTimerRef = useRef(null);
@@ -15,20 +15,19 @@ export function useChat() {
     const setup = async () => {
       const handlers = [
         await listen("agent-step", (e) => {
-          if (!cancelled) setProgress({ type: "step", text: e.payload });
+          if (!cancelled) setProgress((p) => [...p, { type: "step", text: e.payload }].slice(-2));
         }),
         await listen("agent-thinking", (e) => {
-          if (!cancelled) setProgress({ type: "thinking", text: e.payload });
+          if (!cancelled) setProgress((p) => [...p, { type: "thinking", text: e.payload }].slice(-2));
         }),
         await listen("agent-error", (e) => {
           if (!cancelled) {
-            setProgress({ type: "error", text: e.payload });
+            setProgress((p) => [...p, { type: "error", text: e.payload }].slice(-2));
             setError(e.payload);
           }
         }),
         await listen("agent-done", () => {
-          // Clear progress when step completes
-          if (!cancelled) setProgress(null);
+          if (!cancelled) setProgress([]);
         }),
       ];
       if (cancelled) {
@@ -49,7 +48,7 @@ export function useChat() {
     async (text) => {
       if (!text.trim() || loading) return;
       setError(null);
-      setProgress(null);
+      setProgress([]);
       if (typingTimerRef.current) {
         clearInterval(typingTimerRef.current);
         typingTimerRef.current = null;
@@ -59,7 +58,7 @@ export function useChat() {
       try {
         const reply = await invoke("chat", { message: text });
         setLoading(false);
-        setProgress(null);
+        setProgress([]);
 
         const chars = [...reply];
         const totalTicks = Math.min(chars.length, 150);
@@ -93,7 +92,7 @@ export function useChat() {
           { role: "assistant", text: `出错: ${e}` },
         ]);
         setLoading(false);
-        setProgress(null);
+        setProgress([]);
       }
     },
     [loading]
@@ -117,7 +116,7 @@ export function useChat() {
 
   const loadSession = useCallback(async (name) => {
     setError(null);
-    setProgress(null);
+    setProgress([]);
     setMessages([]);
     setLoading(true);
     try {
