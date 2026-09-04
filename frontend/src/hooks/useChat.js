@@ -11,28 +11,36 @@ export function useChat() {
   const typingTimerRef = useRef(null);
 
   useEffect(() => {
+    let cancelled = false;
     const setup = async () => {
       const handlers = [
         await listen("agent-step", (e) => {
-          setProgress((p) => [...p, { type: "step", text: e.payload }]);
+          if (!cancelled) setProgress((p) => [...p, { type: "step", text: e.payload }]);
         }),
         await listen("agent-thinking", (e) => {
-          setProgress((p) => [...p, { type: "thinking", text: e.payload }]);
+          if (!cancelled) setProgress((p) => [...p, { type: "thinking", text: e.payload }]);
         }),
         await listen("agent-error", (e) => {
-          setProgress((p) => [...p, { type: "error", text: e.payload }]);
-          setError(e.payload);
+          if (!cancelled) {
+            setProgress((p) => [...p, { type: "error", text: e.payload }]);
+            setError(e.payload);
+          }
         }),
         await listen("agent-done", () => {
-          // Don't clear progress — keep steps visible
+          // Keep steps visible
         }),
       ];
-      unlistenRef.current = handlers.map((h) => h);
+      if (cancelled) {
+        handlers.forEach((h) => h());
+      } else {
+        unlistenRef.current = handlers;
+      }
     };
     setup();
     return () => {
+      cancelled = true;
       unlistenRef.current.forEach((fn) => fn());
-      if (typingTimerRef.current) clearInterval(typingTimerRef.current);
+      unlistenRef.current = [];
     };
   }, []);
 
@@ -41,13 +49,16 @@ export function useChat() {
       if (!text.trim() || loading) return;
       setError(null);
       setProgress([]);
+      if (typingTimerRef.current) {
+        clearInterval(typingTimerRef.current);
+        typingTimerRef.current = null;
+      }
       setMessages((m) => [...m, { role: "user", text }]);
       setLoading(true);
       try {
         const reply = await invoke("chat", { message: text });
         setLoading(false);
 
-        // Typewriter effect: reveal characters gradually
         const chars = [...reply];
         const totalTicks = Math.min(chars.length, 150);
         const charsPerTick = Math.ceil(chars.length / totalTicks);
@@ -86,7 +97,6 @@ export function useChat() {
   );
 
   const interrupt = useCallback(async () => {
-    // If typing, finish immediately
     if (typingTimerRef.current) {
       clearInterval(typingTimerRef.current);
       typingTimerRef.current = null;
@@ -94,7 +104,6 @@ export function useChat() {
         const copy = [...m];
         const last = copy[copy.length - 1];
         if (last && last.typing) {
-          // Keep partial text, just stop typing
           copy[copy.length - 1] = { ...last, typing: false };
         }
         return copy;
