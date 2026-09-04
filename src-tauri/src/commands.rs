@@ -130,12 +130,19 @@ pub async fn interrupt(state: State<'_, AppState>) -> Result<(), String> {
 pub async fn toggle_window_width(window: tauri::WebviewWindow) -> Result<bool, String> {
     let cur = window.inner_size().map_err(|e| e.to_string())?;
     let expanded = cur.width <= 300;
-    let new_w = if expanded { 480 } else { 280 };
-    window
-        .set_size(tauri::Size::Physical(tauri::PhysicalSize {
-            width: new_w,
+    let start_w = cur.width as i32;
+    let end_w = if expanded { 480 } else { 280 };
+    let steps = 15;
+    for i in 1..=steps {
+        let t = i as f32 / steps as f32;
+        // ease-out cubic
+        let eased = 1.0 - (1.0 - t).powi(3);
+        let w = (start_w as f32 + (end_w - start_w) as f32 * eased) as i32;
+        let _ = window.set_size(tauri::Size::Physical(tauri::PhysicalSize {
+            width: w as u32,
             height: cur.height,
-        }))
-        .map_err(|e| e.to_string())?;
+        }));
+        tokio::time::sleep(std::time::Duration::from_millis(12)).await;
+    }
     Ok(expanded)
 }
