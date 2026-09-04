@@ -27,7 +27,7 @@ export function useChat() {
           }
         }),
         await listen("agent-done", () => {
-          if (!cancelled) setProgress([]);
+          // Don't clear here — only clear when final reply arrives
         }),
       ];
       if (cancelled) {

@@ -68,6 +68,7 @@ body {
 /* ---- 聊天气泡 ---- */
 .sd-bubble {
     background: var(--sd-cream);
+    background-clip: padding-box;
     border: 3px solid transparent;
     border-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAkAAAAJCAYAAADgkQYQAAAAJElEQVR4nGNgQALfn6z6jw0zUE/R8Ulx/2EYlwYaKcKlgXqKAPUfqB/XQF2/AAAAAElFTkSuQmCC") 3;
     border-radius: 0;
