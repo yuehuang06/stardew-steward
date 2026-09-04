@@ -11,8 +11,14 @@ pub struct SavedSession {
     pub messages: Vec<Message>,
 }
 
-pub fn sessions_dir() -> &'static str {
-    "sessions"
+pub fn sessions_dir() -> String {
+    // 相对路径解析到项目根目录，保证 cargo tauri dev（CWD=src-tauri/）也正确
+    let dir = "sessions";
+    if std::path::Path::new(dir).is_absolute() {
+        dir.to_string()
+    } else {
+        format!("{}/{}", env!("CARGO_MANIFEST_DIR"), dir)
+    }
 }
 
 pub fn sanitize_name(name: &str) -> String {

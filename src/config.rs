@@ -36,8 +36,21 @@ pub struct KnowledgeConfig {
 }
 
 pub fn load() -> anyhow::Result<Config> {
-    let text = std::fs::read_to_string("config.toml")
-        .or_else(|_| std::fs::read_to_string("config.toml.example"))?;
+    // 尝试多个路径：CWD → CWD/.. → 编译时项目根目录
+    let candidates = [
+        "config.toml".to_string(),
+        "../config.toml".to_string(),
+        format!("{}/config.toml", env!("CARGO_MANIFEST_DIR")),
+    ];
+    let text = candidates
+        .iter()
+        .find_map(|p| std::fs::read_to_string(p).ok())
+        .ok_or_else(|| {
+            anyhow::anyhow!(
+                "找不到 config.toml（尝试过: {}）",
+                candidates.join(", ")
+            )
+        })?;
     let mut config: Config = toml::from_str(&text)?;
 
     // .env 中的 API_KEY 优先
@@ -46,5 +59,13 @@ pub fn load() -> anyhow::Result<Config> {
             config.model.api_key = key;
         }
     }
+
+    // 将相对路径解析为绝对路径（基于项目根目录）
+    // 这样 cargo tauri dev（CWD=src-tauri/）也能正确找到 data/ 和 sessions/
+    let root = env!("CARGO_MANIFEST_DIR");
+    if !std::path::Path::new(&config.knowledge.db_path).is_absolute() {
+        config.knowledge.db_path = format!("{}/{}", root, config.knowledge.db_path);
+    }
+
     Ok(config)
 }
