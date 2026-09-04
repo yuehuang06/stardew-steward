@@ -20,10 +20,6 @@ export default function App() {
   const [showSessions, setShowSessions] = useState(false);
   const scrollRef = useRef(null);
 
-  const hasProgress = progress.length > 0;
-  const lastMsg = messages[messages.length - 1];
-  const showProgressBeforeLast = hasProgress && lastMsg && lastMsg.role === "assistant" && !loading;
-
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
@@ -99,23 +95,11 @@ export default function App() {
           </div>
         )}
 
-        {messages.map((msg, i) => {
-          const isLast = i === messages.length - 1;
-          const showProgressHere = isLast && showProgressBeforeLast;
-          return (
-            <div key={i}>
-              {showProgressHere && (
-                <ProgressIndicator progress={progress} done />
-              )}
-              <ChatMessage msg={msg} />
-            </div>
-          );
-        })}
+        {messages.map((msg, i) => (
+          <ChatMessage key={i} msg={msg} />
+        ))}
 
-        {/* While loading (agent working, no reply yet): progress at the end */}
-        {loading && hasProgress && (
-          <ProgressIndicator progress={progress} done={false} />
-        )}
+        {loading && <ProgressIndicator progress={progress} />}
       </div>
 
       <InputBar

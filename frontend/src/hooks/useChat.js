@@ -5,7 +5,7 @@ import { listen } from "@tauri-apps/api/event";
 export function useChat() {
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [progress, setProgress] = useState([]);
+  const [progress, setProgress] = useState(null);
   const [error, setError] = useState(null);
   const unlistenRef = useRef([]);
   const typingTimerRef = useRef(null);
@@ -15,19 +15,20 @@ export function useChat() {
     const setup = async () => {
       const handlers = [
         await listen("agent-step", (e) => {
-          if (!cancelled) setProgress((p) => [...p, { type: "step", text: e.payload }]);
+          if (!cancelled) setProgress({ type: "step", text: e.payload });
         }),
         await listen("agent-thinking", (e) => {
-          if (!cancelled) setProgress((p) => [...p, { type: "thinking", text: e.payload }]);
+          if (!cancelled) setProgress({ type: "thinking", text: e.payload });
         }),
         await listen("agent-error", (e) => {
           if (!cancelled) {
-            setProgress((p) => [...p, { type: "error", text: e.payload }]);
+            setProgress({ type: "error", text: e.payload });
             setError(e.payload);
           }
         }),
         await listen("agent-done", () => {
-          // Keep steps visible
+          // Clear progress when step completes
+          if (!cancelled) setProgress(null);
         }),
       ];
       if (cancelled) {
@@ -48,7 +49,7 @@ export function useChat() {
     async (text) => {
       if (!text.trim() || loading) return;
       setError(null);
-      setProgress([]);
+      setProgress(null);
       if (typingTimerRef.current) {
         clearInterval(typingTimerRef.current);
         typingTimerRef.current = null;
@@ -58,6 +59,7 @@ export function useChat() {
       try {
         const reply = await invoke("chat", { message: text });
         setLoading(false);
+        setProgress(null);
 
         const chars = [...reply];
         const totalTicks = Math.min(chars.length, 150);
@@ -91,6 +93,7 @@ export function useChat() {
           { role: "assistant", text: `出错: ${e}` },
         ]);
         setLoading(false);
+        setProgress(null);
       }
     },
     [loading]
@@ -114,7 +117,7 @@ export function useChat() {
 
   const loadSession = useCallback(async (name) => {
     setError(null);
-    setProgress([]);
+    setProgress(null);
     setMessages([]);
     setLoading(true);
     try {
