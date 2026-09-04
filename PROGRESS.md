@@ -63,9 +63,9 @@
 ### 当前: 无编译错误
 
 ```
-cargo build              → ✅ (CLI, 4 warnings)
+cargo build              → ✅ (CLI, 6 warnings)
 cargo build -p stardew-steward-gui → ✅ (Tauri 后端, 复用库 warnings)
-npm run build (frontend) → ✅ (40 modules, 148KB JS)
+npm run build (frontend) → ✅ (45 modules, 154KB JS)
 ```
 
 ### Warnings (均为已有, 非本次引入)
