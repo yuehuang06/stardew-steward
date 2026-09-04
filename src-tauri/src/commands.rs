@@ -3,6 +3,7 @@ use std::sync::atomic::AtomicBool;
 
 use stardew_steward::agent::Agent;
 use stardew_steward::agent::session;
+use stardew_steward::config;
 use stardew_steward::parser;
 use stardew_steward::tools::read_save;
 use tauri::State;
@@ -147,4 +148,80 @@ pub async fn toggle_window_width(window: tauri::WebviewWindow) -> Result<bool, S
         tokio::time::sleep(std::time::Duration::from_millis(12)).await;
     }
     Ok(expanded)
+}
+
+#[derive(serde::Serialize)]
+pub struct UsageDetail {
+    pub input_tokens: u64,
+    pub output_tokens: u64,
+    pub budget: u64,
+    pub cost: f64,
+    pub price_input: f64,
+    pub price_output: f64,
+}
+
+#[tauri::command]
+pub async fn get_usage_detail(state: State<'_, AppState>) -> Result<UsageDetail, String> {
+    let agent = state.agent.lock().await;
+    let (input, output, budget, cost) = agent.usage_detail();
+    let cfg = agent.config();
+    Ok(UsageDetail {
+        input_tokens: input,
+        output_tokens: output,
+        budget,
+        cost,
+        price_input: cfg.model.price_input,
+        price_output: cfg.model.price_output,
+    })
+}
+
+#[tauri::command]
+pub async fn get_config(state: State<'_, AppState>) -> Result<serde_json::Value, String> {
+    let agent = state.agent.lock().await;
+    let cfg = agent.config();
+    let mut json = serde_json::to_value(cfg).map_err(|e| e.to_string())?;
+    // Mask api_key — only show whether it's set
+    if let Some(key) = json["model"]["api_key"].as_str() {
+        let masked = if key.is_empty() {
+            String::new()
+        } else {
+            format!("{}...{}", &key[..key.len().min(4)], &key[key.len().saturating_sub(4)..])
+        };
+        json["model"]["api_key"] = serde_json::Value::String(masked);
+    }
+    Ok(json)
+}
+
+#[tauri::command]
+pub async fn update_config(
+    state: State<'_, AppState>,
+    endpoint: String,
+    api_key: String,
+    model: String,
+    context_length: usize,
+    thinking_mode: bool,
+    price_input: f64,
+    price_output: f64,
+) -> Result<(), String> {
+    let mut agent = state.agent.lock().await;
+    let mut new_model = agent.config().model.clone();
+    new_model.endpoint = endpoint;
+    // Only update api_key if user provided a new one (not masked)
+    if !api_key.is_empty() && !api_key.contains("...") {
+        new_model.api_key = api_key;
+    }
+    new_model.model = model;
+    new_model.context_length = context_length;
+    new_model.thinking_mode = thinking_mode;
+    new_model.price_input = price_input;
+    new_model.price_output = price_output;
+
+    agent.update_model_config(new_model.clone());
+
+    // Persist to config.toml
+    let mut cfg = agent.config().clone();
+    cfg.model = new_model;
+    config::save(&cfg).map_err(|e| e.to_string())?;
+
+    Ok(())
 }

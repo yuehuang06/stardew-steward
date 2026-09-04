@@ -3,11 +3,13 @@ import { useChat } from "./hooks/useChat";
 import { useWindowState, useSaveStatus, useUsage } from "./hooks/useWindowState";
 import { useSessions } from "./hooks/useSessions";
 import { useAlwaysOnTop } from "./hooks/useAlwaysOnTop";
+import { useSettings } from "./hooks/useSettings";
 import { Titlebar } from "./components/Titlebar";
 import { ChatMessage } from "./components/ChatMessage";
 import { ProgressIndicator } from "./components/ProgressIndicator";
 import { InputBar } from "./components/InputBar";
 import { SessionPanel } from "./components/SessionPanel";
+import { SettingsPanel } from "./components/SettingsPanel";
 
 export default function App() {
   const { messages, loading, progress, send, interrupt, loadSession } = useChat();
@@ -17,7 +19,9 @@ export default function App() {
   const { brief, refresh: refreshUsage } = useUsage();
   const { sessions, load, refresh: refreshSessions } = useSessions();
   const { onTop, toggle: toggleTop } = useAlwaysOnTop();
+  const { config, usage, saving, update: updateConfig, refresh: refreshSettings } = useSettings();
   const [showSessions, setShowSessions] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
   const scrollRef = useRef(null);
 
   useEffect(() => {
@@ -60,7 +64,10 @@ export default function App() {
         status={status}
         expanded={expanded}
         onToggle={toggle}
-        onRefresh={refreshStatus}
+        onSettings={() => {
+          refreshSettings();
+          setShowSettings(true);
+        }}
         onTop={onTop}
         onToggleTop={toggleTop}
         onOpenSessions={() => {
@@ -114,6 +121,16 @@ export default function App() {
           sessions={sessions}
           onLoad={handleLoadSession}
           onClose={() => setShowSessions(false)}
+        />
+      )}
+
+      {showSettings && (
+        <SettingsPanel
+          config={config}
+          usage={usage}
+          saving={saving}
+          onUpdate={updateConfig}
+          onClose={() => setShowSettings(false)}
         />
       )}
     </div>

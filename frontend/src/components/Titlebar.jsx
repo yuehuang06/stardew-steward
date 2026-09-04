@@ -1,6 +1,6 @@
 import { getCurrentWindow } from "@tauri-apps/api/window";
 
-export function Titlebar({ status, expanded, onToggle, onRefresh, onTop, onToggleTop, onOpenSessions }) {
+export function Titlebar({ status, expanded, onToggle, onSettings, onTop, onToggleTop, onOpenSessions }) {
   const btnStyle = { padding: "2px 4px", lineHeight: 1, height: "22px" };
   return (
     <>
@@ -54,10 +54,10 @@ export function Titlebar({ status, expanded, onToggle, onRefresh, onTop, onToggl
           <button className="sd-btn" style={btnStyle} onClick={onOpenSessions}>
             历史
           </button>
-          <button className="sd-btn" style={btnStyle} onClick={onRefresh}>
-            刷新
-          </button>
-          <button className="sd-btn" style={btnStyle} onClick={onToggle}>
+        <button className="sd-btn" style={btnStyle} onClick={onSettings}>
+          设置
+        </button>
+        <button className="sd-btn" style={btnStyle} onClick={onToggle}>
             {expanded ? "收起" : "展开"}
           </button>
         </div>

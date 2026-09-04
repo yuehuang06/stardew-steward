@@ -89,6 +89,24 @@ impl Agent {
         format!("¥{:.4} · {}K/{}K tok", cost, used / 1000, budget / 1000)
     }
 
+    pub fn usage_detail(&self) -> (u64, u64, u64, f64) {
+        (
+            self.usage.total_input_tokens(),
+            self.usage.total_output_tokens(),
+            self.usage.budget(),
+            self.usage.total_cost(),
+        )
+    }
+
+    pub fn config(&self) -> &Config {
+        &self.config
+    }
+
+    pub fn update_model_config(&mut self, model: crate::config::ModelConfig) {
+        self.config.model = model;
+        self.usage = UsageTracker::from_config(&self.config);
+    }
+
     /// R5: 保存当前会话到 sessions/<name>.json，返回文件路径
     pub fn save_session(&self, name: &str) -> anyhow::Result<String> {
         let session = SavedSession {
