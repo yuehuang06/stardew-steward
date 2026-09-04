@@ -11,7 +11,7 @@
     --sd-wood-darker: #6a5040;
     --sd-parchment:   #DFAE73;
     --sd-parchment-d: #e0d0a8;
-    --sd-cream:       #fff8e7;
+    --sd-cream:       #fbf0d7;
     --sd-text:        #3a2817;
     --sd-text-light:  #6a5837;
     --sd-green:       #5a7a3a;
@@ -69,10 +69,10 @@ body {
 .sd-bubble {
     background: var(--sd-cream);
     border: none;
-    border-left:3px solid #F7E4AA;
-    border-bottom:3px solid #F7E4AA;
-    border-right: 3px solid #C7925E;
-    border-top: 3px solid #C7925E;
+    border-left:3px solid #C7925E;
+    border-bottom:3px solid #C7925E;
+    border-right: 3px solid #F7E4AA;
+    border-top: 3px solid #F7E4AA;
     /*box-shadow:
         inset 0 3px 0 var(--sd-frame-mid),
         inset 0 6px 0 var(--sd-frame-inner);*/
