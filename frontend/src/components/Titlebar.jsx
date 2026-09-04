@@ -2,10 +2,16 @@ import { getCurrentWindow } from "@tauri-apps/api/window";
 
 export function Titlebar({ status, expanded, onToggle, onSettings, onNew, onTop, onToggleTop, onOpenSessions }) {
   const btnStyle = { padding: "2px 4px", lineHeight: 1, height: "22px" };
+
+  const handleMouseDown = async (e) => {
+    if (e.target.closest("button")) return;
+    await getCurrentWindow().startDragging();
+  };
+
   return (
     <>
       <div
-        data-tauri-drag-region
+        onMouseDown={handleMouseDown}
         style={{
           flexShrink: 0,
           display: "flex",
@@ -13,6 +19,7 @@ export function Titlebar({ status, expanded, onToggle, onSettings, onNew, onTop,
           gap: "3px",
           padding: "3px 6px",
           position: "relative",
+          cursor: "move",
         }}
       >
         <button
@@ -33,7 +40,7 @@ export function Titlebar({ status, expanded, onToggle, onSettings, onNew, onTop,
         >
           X
         </button>
-        <div data-tauri-drag-region style={{ textAlign: "center" }}>
+        <div style={{ textAlign: "center" }}>
           {status ? (
             <>
               <div>
@@ -47,7 +54,7 @@ export function Titlebar({ status, expanded, onToggle, onSettings, onNew, onTop,
             <div>星露谷农场管家</div>
           )}
         </div>
-        <div data-tauri-drag-region style={{ display: "flex", justifyContent: "space-around", paddingRight: "28px" }}>
+        <div style={{ display: "flex", justifyContent: "space-around", paddingRight: "28px" }}>
           <button className="sd-btn" style={btnStyle} onClick={onNew}>
             新建
           </button>
