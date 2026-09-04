@@ -1,17 +1,19 @@
-import { useState, useRef } from "react";
+import { useRef } from "react";
 
 export function InputBar({ onSend, onInterrupt, loading, usageBrief }) {
-  const [text, setText] = useState("");
-  const composingRef = useRef(false);
+  const inputRef = useRef(null);
 
   const handleSend = () => {
+    const text = inputRef.current?.value ?? "";
     if (!text.trim() || loading) return;
     onSend(text);
-    setText("");
+    if (inputRef.current) {
+      inputRef.current.value = "";
+    }
   };
 
   const handleKeyDown = (e) => {
-    if (e.key === "Enter" && !e.shiftKey && !composingRef.current) {
+    if (e.key === "Enter" && !e.shiftKey && !e.isComposing) {
       e.preventDefault();
       handleSend();
     }
@@ -31,16 +33,12 @@ export function InputBar({ onSend, onInterrupt, loading, usageBrief }) {
     >
       <div style={{ display: "flex", gap: "4px" }}>
         <input
+          ref={inputRef}
+          type="text"
+          lang="zh-CN"
           className="sd-input"
           style={{ flex: 1, fontSize: "14px" }}
           placeholder="问点什么..."
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          onCompositionStart={() => { composingRef.current = true; }}
-          onCompositionEnd={(e) => {
-            composingRef.current = false;
-            setText(e.target.value);
-          }}
           onKeyDown={handleKeyDown}
           disabled={loading}
         />

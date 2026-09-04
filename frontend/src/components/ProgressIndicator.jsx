@@ -14,9 +14,9 @@ export function ProgressIndicator({ progress }) {
         fontSize: "12px",
       }}
     >
-      <span className="sd-blink">▸</span>
+      <span className="sd-blink">+</span>
       <span>
-        {last.type === "error" ? "✗ " : last.type === "thinking" ? "💭 " : "→ "}
+        {last.type === "error" ? "[错] " : last.type === "thinking" ? "[想] " : ""}
         {last.text}
       </span>
     </div>

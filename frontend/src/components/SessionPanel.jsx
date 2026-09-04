@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 
 function formatTime(ts) {
   if (!ts) return "";
@@ -12,15 +12,15 @@ function formatTime(ts) {
 }
 
 export function SessionPanel({ sessions, onSave, onLoad, onClose }) {
-  const [name, setName] = useState("");
+  const nameRef = useRef(null);
   const [saving, setSaving] = useState(false);
 
   const handleSave = async () => {
-    const n = name.trim() || "untitled";
+    const name = nameRef.current?.value?.trim() || "untitled";
     setSaving(true);
     try {
-      await onSave(n);
-      setName("");
+      await onSave(name);
+      if (nameRef.current) nameRef.current.value = "";
     } finally {
       setSaving(false);
     }
@@ -55,26 +55,26 @@ export function SessionPanel({ sessions, onSave, onLoad, onClose }) {
           flexShrink: 0,
         }}
       >
-        <span style={{ flex: 1, fontSize: "13px" }}>{"\u{1F4C2}"} 会话管理</span>
+        <span style={{ flex: 1, fontSize: "13px" }}>会话管理</span>
         <button
           className="sd-btn"
           style={{ fontSize: "11px", padding: "2px 6px" }}
           onClick={onClose}
-          title="关闭"
         >
-          {"\u2715"}
+          X
         </button>
       </div>
 
       <div style={{ padding: "6px 8px", flexShrink: 0, display: "flex", gap: "4px" }}>
         <input
+          ref={nameRef}
+          type="text"
+          lang="zh-CN"
           className="sd-input"
           style={{ flex: 1, fontSize: "13px" }}
           placeholder="会话名称..."
-          value={name}
-          onChange={(e) => setName(e.target.value)}
           onKeyDown={(e) => {
-            if (e.key === "Enter") handleSave();
+            if (e.key === "Enter" && !e.isComposing) handleSave();
           }}
           disabled={saving}
         />
@@ -98,7 +98,7 @@ export function SessionPanel({ sessions, onSave, onLoad, onClose }) {
               fontSize: "12px",
             }}
           >
-            {"\u{1F4C4}"} 还没有保存的会话
+            还没有保存的会话
           </div>
         ) : (
           sessions.map((s, i) => (
@@ -129,8 +129,8 @@ export function SessionPanel({ sessions, onSave, onLoad, onClose }) {
                 }}
               >
                 <span>{formatTime(s.saved_at)}</span>
-                <span>{"\u{1F4AC}"} {s.message_count}</span>
-                <span>{"\u{1F501}"} {s.interaction_rounds}</span>
+                <span>消息 {s.message_count}</span>
+                <span>轮次 {s.interaction_rounds}</span>
               </div>
             </div>
           ))

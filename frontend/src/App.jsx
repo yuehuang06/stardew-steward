@@ -88,7 +88,7 @@ export default function App() {
               fontSize: "13px",
             }}
           >
-            {"\u{1F33E}"} 欢迎回来，农场主！
+            欢迎回来，农场主！
             <br />
             <br />
             问我「今天该干嘛」

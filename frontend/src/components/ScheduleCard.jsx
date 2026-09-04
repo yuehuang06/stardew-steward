@@ -1,17 +1,17 @@
-const ACTION_EMOJI = {
-  harvest: "\u{1F33E}",
-  shop: "\u{1F6D2}",
-  gift: "\u{1F381}",
-  water: "\u{1F4A7}",
-  mine: "\u26CF\uFE0F",
-  fish: "\u{1F3A3}",
-  other: "\u{1F4CB}",
+const ACTION_LABEL = {
+  harvest: "收",
+  shop: "买",
+  gift: "礼",
+  water: "浇",
+  mine: "矿",
+  fish: "钓",
+  other: "·",
 };
 
 const PRIORITY_LABEL = {
-  must: "\u5FC5\u505A",
-  should: "\u5EFA\u8BAE",
-  could: "\u53EF\u9009",
+  must: "必做",
+  should: "建议",
+  could: "可选",
 };
 
 export function ScheduleCard({ schedule }) {
@@ -20,15 +20,15 @@ export function ScheduleCard({ schedule }) {
   return (
     <div className="sd-schedule sd-slide-in">
       <div className="sd-schedule-header">
-        {"\u{1F4CB}"} {schedule.summary}
+        {schedule.summary}
       </div>
 
       {schedule.tasks.map((task, i) => {
-        const emoji = ACTION_EMOJI[task.action] || ACTION_EMOJI.other;
+        const label = ACTION_LABEL[task.action] || ACTION_LABEL.other;
         const pri = task.priority || "other";
         return (
           <div key={i} className="sd-task-row">
-            <span className="sd-task-icon">{emoji}</span>
+            <span className="sd-task-icon">{label}</span>
             <span className="sd-task-desc">{task.description}</span>
             <span className="sd-task-badge sd-badge-time">
               {task.time_cost}h
@@ -51,22 +51,22 @@ export function ScheduleCard({ schedule }) {
       })}
 
       <div className="sd-schedule-footer">
-        <span>{"\u23F1"} {schedule.total_time}h</span>
+        <span>耗时 {schedule.total_time}h</span>
         <span style={{ color: "var(--sd-red)" }}>
-          {"\u2212"}{schedule.total_cost}g
+          -{schedule.total_cost}g
         </span>
         <span style={{ color: "var(--sd-green-d)" }}>
           +{schedule.total_income}g
         </span>
         <span style={{ fontWeight: 700, color: net >= 0 ? "var(--sd-green-d)" : "var(--sd-red)" }}>
-          {"\u51C0"} {net >= 0 ? "+" : ""}{net}g
+          净 {net >= 0 ? "+" : ""}{net}g
         </span>
       </div>
 
       {schedule.notes && schedule.notes.length > 0 && (
         <div className="sd-schedule-notes">
           {schedule.notes.map((n, i) => (
-            <div key={i}>{"\u26A0"} {n}</div>
+            <div key={i}>! {n}</div>
           ))}
         </div>
       )}
