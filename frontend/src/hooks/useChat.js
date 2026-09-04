@@ -8,6 +8,7 @@ export function useChat() {
   const [progress, setProgress] = useState([]);
   const [error, setError] = useState(null);
   const unlistenRef = useRef([]);
+  const typingTimerRef = useRef(null);
 
   useEffect(() => {
     const setup = async () => {
@@ -23,7 +24,7 @@ export function useChat() {
           setError(e.payload);
         }),
         await listen("agent-done", () => {
-          setProgress([]);
+          // Don't clear progress — keep steps visible
         }),
       ];
       unlistenRef.current = handlers.map((h) => h);
@@ -31,6 +32,7 @@ export function useChat() {
     setup();
     return () => {
       unlistenRef.current.forEach((fn) => fn());
+      if (typingTimerRef.current) clearInterval(typingTimerRef.current);
     };
   }, []);
 
@@ -43,22 +45,61 @@ export function useChat() {
       setLoading(true);
       try {
         const reply = await invoke("chat", { message: text });
-        setMessages((m) => [...m, { role: "assistant", text: reply }]);
+        setLoading(false);
+
+        // Typewriter effect: reveal characters gradually
+        const chars = [...reply];
+        const totalTicks = Math.min(chars.length, 150);
+        const charsPerTick = Math.ceil(chars.length / totalTicks);
+        let i = 0;
+
+        setMessages((m) => [...m, { role: "assistant", text: "", typing: true }]);
+
+        typingTimerRef.current = setInterval(() => {
+          i += charsPerTick;
+          if (i >= chars.length) {
+            clearInterval(typingTimerRef.current);
+            typingTimerRef.current = null;
+            setMessages((m) => {
+              const copy = [...m];
+              copy[copy.length - 1] = { role: "assistant", text: reply, typing: false };
+              return copy;
+            });
+          } else {
+            setMessages((m) => {
+              const copy = [...m];
+              copy[copy.length - 1] = { role: "assistant", text: chars.slice(0, i).join(""), typing: true };
+              return copy;
+            });
+          }
+        }, 18);
       } catch (e) {
         setError(String(e));
         setMessages((m) => [
           ...m,
           { role: "assistant", text: `出错: ${e}` },
         ]);
-      } finally {
         setLoading(false);
-        setProgress([]);
       }
     },
     [loading]
   );
 
   const interrupt = useCallback(async () => {
+    // If typing, finish immediately
+    if (typingTimerRef.current) {
+      clearInterval(typingTimerRef.current);
+      typingTimerRef.current = null;
+      setMessages((m) => {
+        const copy = [...m];
+        const last = copy[copy.length - 1];
+        if (last && last.typing) {
+          // Keep partial text, just stop typing
+          copy[copy.length - 1] = { ...last, typing: false };
+        }
+        return copy;
+      });
+    }
     await invoke("interrupt");
   }, []);
 
@@ -70,7 +111,7 @@ export function useChat() {
     try {
       await invoke("load_session", { name });
       const msgs = await invoke("get_messages");
-      setMessages(msgs);
+      setMessages(msgs.map((m) => ({ ...m, typing: false })));
     } catch (e) {
       setError(String(e));
       setMessages((m) => [
@@ -79,7 +120,6 @@ export function useChat() {
       ]);
     } finally {
       setLoading(false);
-      setProgress([]);
     }
   }, []);
 

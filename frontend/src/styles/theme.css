@@ -17,6 +17,7 @@
     --sd-blue:        #4a6a8a;
     --sd-font-pixel:  'Pixelify Sans', 'Noto Sans SC', sans-serif;
     --sd-font-body:   'Noto Sans SC', 'Pixelify Sans', sans-serif;
+    --sd-font-size:   13px;
 }
 
 * {
@@ -24,6 +25,7 @@
     padding: 0;
     box-sizing: border-box;
     font-family: var(--sd-font-body);
+    font-size: var(--sd-font-size);
 }
 
 html, body, #root {
@@ -34,7 +36,6 @@ html, body, #root {
 body {
     background: transparent;
     color: var(--sd-text);
-    font-size: 15px;
     line-height: 1.5;
 }
 
@@ -58,7 +59,7 @@ body {
     padding: 4px 12px;
     cursor: pointer;
     font-family: var(--sd-font-pixel);
-    font-size: 14px;
+    font-size: var(--sd-font-size);
     transition: filter 0.1s;
     border-radius: 0;
 }
@@ -80,7 +81,7 @@ body {
     border: 2px solid var(--sd-wood-dark);
     box-shadow: inset 1px 1px 0 var(--sd-parchment-d);
     padding: 6px 8px;
-    font-size: 14px;
+    font-size: var(--sd-font-size);
     border-radius: 0;
     outline: none;
 }
@@ -129,7 +130,7 @@ body {
     background: var(--sd-wood);
     color: var(--sd-cream);
     padding: 6px 10px;
-    font-size: 13px;
+    font-size: var(--sd-font-size);
     border-bottom: 2px solid var(--sd-wood-dark);
     text-align: center;
 }
@@ -139,13 +140,13 @@ body {
     gap: 6px;
     padding: 5px 8px;
     border-bottom: 1px dashed var(--sd-parchment-d);
-    font-size: 13px;
+    font-size: var(--sd-font-size);
 }
 .sd-task-row:last-child {
     border-bottom: none;
 }
 .sd-task-icon {
-    font-size: 16px;
+    font-size: var(--sd-font-size);
     flex-shrink: 0;
     width: 20px;
     text-align: center;
@@ -156,7 +157,7 @@ body {
     word-break: break-word;
 }
 .sd-task-badge {
-    font-size: 10px;
+    font-size: var(--sd-font-size);
     padding: 1px 5px;
     border: 1px solid var(--sd-wood-dark);
     white-space: nowrap;
@@ -193,12 +194,12 @@ body {
     padding: 5px 8px;
     background: var(--sd-parchment-d);
     border-top: 2px solid var(--sd-wood-dark);
-    font-size: 12px;
+    font-size: var(--sd-font-size);
     flex-wrap: wrap;
 }
 .sd-schedule-notes {
     padding: 4px 10px 6px;
-    font-size: 11px;
+    font-size: var(--sd-font-size);
     color: var(--sd-text-light);
     border-top: 1px dashed var(--sd-parchment-d);
 }

@@ -39,10 +39,10 @@ export function SessionPanel({ sessions, onLoad, onClose }) {
           flexShrink: 0,
         }}
       >
-        <span style={{ flex: 1, fontSize: "13px" }}>历史会话</span>
+        <span style={{ flex: 1 }}>历史会话</span>
         <button
           className="sd-btn"
-          style={{ fontSize: "11px", padding: "2px 6px" }}
+          style={{ padding: "2px 6px" }}
           onClick={onClose}
         >
           X
@@ -56,7 +56,6 @@ export function SessionPanel({ sessions, onLoad, onClose }) {
               textAlign: "center",
               marginTop: "20px",
               color: "var(--sd-text-light)",
-              fontSize: "12px",
             }}
           >
             还没有历史会话
@@ -80,14 +79,13 @@ export function SessionPanel({ sessions, onLoad, onClose }) {
               onMouseEnter={(e) => (e.currentTarget.style.filter = "brightness(0.95)")}
               onMouseLeave={(e) => (e.currentTarget.style.filter = "none")}
             >
-              <div style={{ fontSize: "13px", fontWeight: 600 }}>
+              <div style={{ fontWeight: 600 }}>
                 {s.name}
               </div>
               <div
                 style={{
                   display: "flex",
                   gap: "8px",
-                  fontSize: "10px",
                   color: "var(--sd-text-light)",
                   marginTop: "2px",
                 }}

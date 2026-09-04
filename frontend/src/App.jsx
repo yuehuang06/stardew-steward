@@ -86,7 +86,6 @@ export default function App() {
               textAlign: "center",
               marginTop: "40px",
               color: "var(--sd-text-light)",
-              fontSize: "13px",
             }}
           >
             欢迎回来，农场主！
@@ -103,6 +102,7 @@ export default function App() {
         ))}
 
         {loading && <ProgressIndicator progress={progress} />}
+        {!loading && progress.length > 0 && <ProgressIndicator progress={progress} />}
       </div>
 
       <InputBar

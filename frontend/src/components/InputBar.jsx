@@ -37,7 +37,7 @@ export function InputBar({ onSend, onInterrupt, loading, usageBrief }) {
           type="text"
           lang="zh-CN"
           className="sd-input"
-          style={{ flex: 1, fontSize: "14px" }}
+          style={{ flex: 1 }}
           placeholder="问点什么..."
           onKeyDown={handleKeyDown}
           disabled={loading}

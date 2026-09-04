@@ -1,5 +1,5 @@
 export function Titlebar({ status, expanded, onToggle, onRefresh, onTop, onToggleTop, onOpenSessions }) {
-  const btnStyle = { flex: 1, fontSize: "11px", padding: "2px 4px", lineHeight: 1, height: "20px" };
+  const btnStyle = { flex: 1, padding: "2px 4px", lineHeight: 1, height: "22px" };
   return (
     <div
       style={{
@@ -16,15 +16,15 @@ export function Titlebar({ status, expanded, onToggle, onRefresh, onTop, onToggl
       <div data-tauri-drag-region style={{ cursor: "default", textAlign: "center" }}>
         {status ? (
           <>
-            <div style={{ fontSize: "12px" }}>
+            <div>
               {status.date} · {status.money}g
             </div>
-            <div style={{ fontSize: "11px" }}>
+            <div>
               {status.weather}
             </div>
           </>
         ) : (
-          <div style={{ fontSize: "12px" }}>星露谷农场管家</div>
+          <div>星露谷农场管家</div>
         )}
       </div>
       <div style={{ display: "flex", gap: "3px" }}>

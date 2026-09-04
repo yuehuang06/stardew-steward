@@ -4,7 +4,8 @@ import { Markdown } from "./Markdown";
 
 export function ChatMessage({ msg }) {
   const isUser = msg.role === "user";
-  const schedule = !isUser ? tryParseSchedule(msg.text) : null;
+  const typing = msg.typing;
+  const schedule = !isUser && !typing ? tryParseSchedule(msg.text) : null;
 
   return (
     <div
@@ -21,14 +22,12 @@ export function ChatMessage({ msg }) {
           maxWidth: "90%",
           padding: schedule ? 0 : "6px 10px",
           background: isUser ? "var(--sd-cream)" : "var(--sd-parchment)",
-          fontSize: "14px",
           whiteSpace: schedule ? "normal" : "pre-wrap",
           wordBreak: "break-word",
         }}
       >
         <div
           style={{
-            fontSize: "10px",
             color: "var(--sd-text-light)",
             marginBottom: "2px",
             padding: schedule ? "4px 8px 0" : 0,
@@ -40,6 +39,8 @@ export function ChatMessage({ msg }) {
           <ScheduleCard schedule={schedule} />
         ) : isUser ? (
           msg.text
+        ) : typing ? (
+          <span>{msg.text}<span className="sd-blink">_</span></span>
         ) : (
           <Markdown>{msg.text}</Markdown>
         )}

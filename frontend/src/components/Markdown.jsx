@@ -3,18 +3,18 @@ import remarkGfm from "remark-gfm";
 
 export function Markdown({ children }) {
   return (
-    <div style={{ fontSize: "14px", lineHeight: 1.6, wordBreak: "break-word" }}>
+    <div style={{ lineHeight: 1.6, wordBreak: "break-word" }}>
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         components={{
           h1: ({ node, ...props }) => (
-            <h3 style={{ margin: "4px 0", fontSize: "15px" }} {...props} />
+            <h3 style={{ margin: "4px 0", fontWeight: 700 }} {...props} />
           ),
           h2: ({ node, ...props }) => (
-            <h3 style={{ margin: "4px 0", fontSize: "15px" }} {...props} />
+            <h3 style={{ margin: "4px 0", fontWeight: 700 }} {...props} />
           ),
           h3: ({ node, ...props }) => (
-            <h4 style={{ margin: "4px 0", fontSize: "14px" }} {...props} />
+            <h4 style={{ margin: "4px 0", fontWeight: 700 }} {...props} />
           ),
           p: ({ node, ...props }) => (
             <p style={{ margin: "4px 0" }} {...props} />
@@ -37,7 +37,6 @@ export function Markdown({ children }) {
                 width: "100%",
                 borderCollapse: "collapse",
                 margin: "4px 0",
-                fontSize: "12px",
               }}
               {...props}
             />
@@ -67,7 +66,6 @@ export function Markdown({ children }) {
               style={{
                 background: "var(--sd-parchment-d)",
                 padding: "1px 3px",
-                fontSize: "13px",
               }}
               {...props}
             />
@@ -78,7 +76,6 @@ export function Markdown({ children }) {
                 background: "var(--sd-parchment-d)",
                 padding: "6px",
                 overflowX: "auto",
-                fontSize: "12px",
                 margin: "4px 0",
               }}
               {...props}
