@@ -17,10 +17,10 @@ export function ChatMessage({ msg }) {
       }}
     >
       <div
-        className="sd-panel"
+        className="sd-bubble"
         style={{
           maxWidth: "90%",
-          padding: schedule ? 0 : "6px 10px",
+          padding: schedule ? 0 : "4px 8px",
           background: isUser ? "var(--sd-cream)" : "var(--sd-parchment)",
           whiteSpace: schedule ? "normal" : "pre-wrap",
           wordBreak: "break-word",

@@ -3,7 +3,7 @@ import remarkGfm from "remark-gfm";
 
 export function Markdown({ children }) {
   return (
-    <div style={{ lineHeight: 1.6, wordBreak: "break-word" }}>
+    <div style={{ lineHeight: 1.3, wordBreak: "break-word" }}>
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         components={{
@@ -17,16 +17,16 @@ export function Markdown({ children }) {
             <h4 style={{ margin: "4px 0", fontWeight: 700 }} {...props} />
           ),
           p: ({ node, ...props }) => (
-            <p style={{ margin: "4px 0" }} {...props} />
+            <p style={{ margin: "1px 0" }} {...props} />
           ),
           ul: ({ node, ...props }) => (
-            <ul style={{ margin: "4px 0", paddingLeft: "16px" }} {...props} />
+            <ul style={{ margin: "2px 0", paddingLeft: "16px" }} {...props} />
           ),
           ol: ({ node, ...props }) => (
-            <ol style={{ margin: "4px 0", paddingLeft: "16px" }} {...props} />
+            <ol style={{ margin: "2px 0", paddingLeft: "16px" }} {...props} />
           ),
           li: ({ node, ...props }) => (
-            <li style={{ margin: "2px 0" }} {...props} />
+            <li style={{ margin: "0" }} {...props} />
           ),
           strong: ({ node, ...props }) => (
             <strong style={{ fontWeight: 700 }} {...props} />

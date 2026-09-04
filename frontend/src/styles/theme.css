@@ -50,6 +50,13 @@ body {
     border-radius: 0;
 }
 
+/* ---- 聊天气泡（细边框） ---- */
+.sd-bubble {
+    background: var(--sd-parchment);
+    border: 1px solid var(--sd-wood-dark);
+    border-radius: 0;
+}
+
 /* ---- 按钮 ---- */
 .sd-btn {
     background: var(--sd-wood);
