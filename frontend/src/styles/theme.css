@@ -2,6 +2,9 @@
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap');
 
 :root {
+    --sd-frame-outer: #773B17;
+    --sd-frame-mid:   #CC7D30;
+    --sd-frame-inner: #A0541E;
     --sd-wood-dark:   #927258;
     --sd-wood:        #927258;
     --sd-wood-light:  #b09078;
@@ -40,15 +43,13 @@ body {
     line-height: 1.5;
 }
 
-/* ---- 像素木边框面板 ---- */
-/* 用阶梯 box-shadow（无模糊）模拟星露谷像素木框 */
+/* ---- 窗口外边框（三色 2px 像素木框） ---- */
 .sd-panel {
     background: var(--sd-parchment);
-    border: 2px solid var(--sd-wood-darker);
+    border: 2px solid var(--sd-frame-outer);
     box-shadow:
-        inset 2px 2px 0 var(--sd-wood-light),
-        inset -2px -2px 0 var(--sd-wood-darker),
-        2px 2px 0 var(--sd-wood-darker);
+        inset 0 0 0 2px var(--sd-frame-mid),
+        inset 0 0 0 4px var(--sd-frame-inner);
     border-radius: 0;
 }
 

@@ -56,7 +56,6 @@ export default function App() {
         flexDirection: "column",
         height: "100vh",
         width: "100vw",
-        borderRadius: "8px",
         overflow: "hidden",
         position: "relative",
       }}
