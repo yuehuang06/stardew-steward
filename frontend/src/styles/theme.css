@@ -43,14 +43,12 @@ body {
     line-height: 1.5;
 }
 
-/* ---- 窗口外边框（三色 2px 像素木框） ---- */
+/* ---- 窗口外边框（9-slice 像素木框 + 斜角切边） ---- */
 .sd-panel {
     background: var(--sd-parchment);
-    border: 2px solid var(--sd-frame-outer);
-    box-shadow:
-        inset 0 0 0 2px var(--sd-frame-mid),
-        inset 0 0 0 4px var(--sd-frame-inner);
-    padding: 4px;
+    border: 6px solid transparent;
+    border-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABIAAAASCAYAAABWzo5XAAAAUElEQVR4nGNgQAMLQuT+g3C5tThWDJNH14cBKDYIpgCGz9QaYMXo6qhvELoEuZh6BsECEd3phMISph6mf9Qgeho0+NIRupMHPq/hMnDAyiMAHCP1oBxywhMAAAAASUVORK5CYII=") 6;
+    padding: 0;
     border-radius: 0;
 }
 
