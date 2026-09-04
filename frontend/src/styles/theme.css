@@ -14,13 +14,15 @@
     --sd-gold:        #d4a64a;
     --sd-red:         #c45a3a;
     --sd-blue:        #4a6a8a;
+    --sd-font-pixel:  'Pixelify Sans', 'Microsoft YaHei', '微软雅黑', 'Noto Sans CJK SC', sans-serif;
+    --sd-font-body:   'Microsoft YaHei', '微软雅黑', 'Noto Sans CJK SC', 'WenQuanYi Micro Hei', sans-serif;
 }
 
 * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
-    font-family: 'Pixelify Sans', monospace;
+    font-family: var(--sd-font-body);
     image-rendering: pixelated;
     -webkit-font-smoothing: none;
 }
@@ -56,6 +58,7 @@ body {
     box-shadow: inset 0 0 0 2px var(--sd-wood-light);
     padding: 4px 12px;
     cursor: pointer;
+    font-family: var(--sd-font-pixel);
     font-size: 14px;
     transition: filter 0.1s;
     border-radius: 0;
