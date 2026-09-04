@@ -62,6 +62,7 @@ fn main() {
             commands::parse_save,
             commands::save_session,
             commands::load_session,
+            commands::new_session,
             commands::list_sessions,
             commands::get_trajectory,
             commands::get_messages,

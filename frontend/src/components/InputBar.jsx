@@ -1,6 +1,6 @@
 import { useRef } from "react";
 
-export function InputBar({ onSend, onInterrupt, loading, usageBrief }) {
+export function InputBar({ onSend, onInterrupt, loading, usageBrief, sessionUsage }) {
   const inputRef = useRef(null);
 
   const handleSend = () => {
@@ -66,9 +66,16 @@ export function InputBar({ onSend, onInterrupt, loading, usageBrief }) {
               fontSize: "10px",
               color: "var(--sd-text)",
               textAlign: "right",
+              display: "flex",
+              justifyContent: "space-between",
             }}
           >
-            {usageBrief}
+            {sessionUsage && (sessionUsage.input > 0 || sessionUsage.output > 0) ? (
+              <span>本次: {sessionUsage.input + sessionUsage.output}tok ¥{sessionUsage.cost.toFixed(4)}</span>
+            ) : (
+              <span>本次: 0tok</span>
+            )}
+            <span>{usageBrief}</span>
           </div>
         )}
       </div>

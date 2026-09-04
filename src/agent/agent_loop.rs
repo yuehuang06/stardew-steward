@@ -50,6 +50,12 @@ impl Agent {
         self.validator = Some(v);
     }
 
+    /// 新建对话：清空历史（保留 system prompt），重置 session 标题
+    pub fn new_session(&mut self) {
+        self.history = vec![Message::system(&self.system_prompt)];
+        self.session_title = None;
+    }
+
     /// R4: 注入打断标记（由 main 的 Ctrl-C 信号任务置位）
     pub fn set_interrupt_flag(&mut self, flag: Arc<AtomicBool>) {
         self.interrupt_flag = Some(flag);
@@ -109,11 +115,17 @@ impl Agent {
 
     /// R5: 保存当前会话到 sessions/<name>.json，返回文件路径
     pub fn save_session(&self, name: &str) -> anyhow::Result<String> {
+        let (input, output, _, cost) = self.usage_detail();
         let session = SavedSession {
             saved_at: session::now_secs(),
             message_count: self.history.len(),
             interaction_rounds: session::count_rounds(&self.history),
             messages: self.history.clone(),
+            usage: session::SessionUsage {
+                input_tokens: input,
+                output_tokens: output,
+                cost,
+            },
         };
         std::fs::create_dir_all(session::sessions_dir())?;
         let path = format!(
@@ -134,8 +146,8 @@ impl Agent {
         }
     }
 
-    /// R5: 加载会话，替换当前历史，返回(消息数, 交互轮数)
-    pub fn load_session(&mut self, name: &str) -> anyhow::Result<(usize, usize)> {
+    /// R5: 加载会话，替换当前历史，返回(消息数, 交互轮数, 会话用量)
+    pub fn load_session(&mut self, name: &str) -> anyhow::Result<(usize, usize, session::SessionUsage)> {
         let path = format!(
             "{}/{}.json",
             session::sessions_dir(),
@@ -145,8 +157,9 @@ impl Agent {
             .map_err(|_| anyhow::anyhow!("会话「{}」不存在（用 /sessions 查看已保存的会话）", name))?;
         let s: SavedSession = serde_json::from_str(&text)?;
         let rounds = s.interaction_rounds;
+        let usage = s.usage.clone();
         self.history = s.messages;
-        Ok((self.history.len(), rounds))
+        Ok((self.history.len(), rounds, usage))
     }
 
     /// 返回前端展示用的聊天消息（仅 user / assistant，跳过 system / tool）

@@ -192,7 +192,7 @@ async fn main() -> anyhow::Result<()> {
                             println!("用法: /load <名称>");
                         } else {
                             match agent.load_session(arg) {
-                                Ok((n, rounds)) => println!("📂 已加载会话「{}」（{} 条消息，{} 轮交互，上下文已恢复）", arg, n, rounds),
+                                Ok((n, rounds, usage)) => println!("📂 已加载会话「{}」（{} 条消息，{} 轮交互，上下文已恢复，本会话用量: {}in/{}out ¥{:.4}）", arg, n, rounds, usage.input_tokens, usage.output_tokens, usage.cost),
                                 Err(e) => eprintln!("{}", e),
                             }
                         }

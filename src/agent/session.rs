@@ -9,6 +9,16 @@ pub struct SavedSession {
     /// 用户交互轮数（排除 system/tool 消息）
     pub interaction_rounds: usize,
     pub messages: Vec<Message>,
+    /// 该会话累计的 token 用量和花费
+    #[serde(default)]
+    pub usage: SessionUsage,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
+pub struct SessionUsage {
+    pub input_tokens: u64,
+    pub output_tokens: u64,
+    pub cost: f64,
 }
 
 pub fn sessions_dir() -> String {

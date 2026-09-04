@@ -12,7 +12,7 @@ import { SessionPanel } from "./components/SessionPanel";
 import { SettingsPanel } from "./components/SettingsPanel";
 
 export default function App() {
-  const { messages, loading, progress, send, interrupt, loadSession } = useChat();
+  const { messages, loading, progress, send, interrupt, loadSession, newSession, sessionUsage } = useChat();
   const { status, loading: statusLoading, refresh: refreshStatus } =
     useSaveStatus();
   const { expanded, toggle } = useWindowState();
@@ -64,6 +64,7 @@ export default function App() {
         status={status}
         expanded={expanded}
         onToggle={toggle}
+        onNew={() => newSession()}
         onSettings={() => {
           refreshSettings();
           setShowSettings(true);
@@ -114,6 +115,7 @@ export default function App() {
         onInterrupt={interrupt}
         loading={loading}
         usageBrief={brief}
+        sessionUsage={sessionUsage}
       />
 
       {showSessions && (

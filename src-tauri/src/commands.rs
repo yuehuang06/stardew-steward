@@ -61,9 +61,32 @@ pub async fn save_session(state: State<'_, AppState>, name: String) -> Result<St
 pub async fn load_session(
     state: State<'_, AppState>,
     name: String,
-) -> Result<(usize, usize), String> {
+) -> Result<LoadResult, String> {
     let mut agent = state.agent.lock().await;
-    agent.load_session(&name).map_err(|e| e.to_string())
+    let (count, rounds, usage) = agent.load_session(&name).map_err(|e| e.to_string())?;
+    Ok(LoadResult {
+        message_count: count,
+        interaction_rounds: rounds,
+        session_input_tokens: usage.input_tokens,
+        session_output_tokens: usage.output_tokens,
+        session_cost: usage.cost,
+    })
+}
+
+#[derive(serde::Serialize)]
+pub struct LoadResult {
+    pub message_count: usize,
+    pub interaction_rounds: usize,
+    pub session_input_tokens: u64,
+    pub session_output_tokens: u64,
+    pub session_cost: f64,
+}
+
+#[tauri::command]
+pub async fn new_session(state: State<'_, AppState>) -> Result<(), String> {
+    let mut agent = state.agent.lock().await;
+    agent.new_session();
+    Ok(())
 }
 
 #[tauri::command]

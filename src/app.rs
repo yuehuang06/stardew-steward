@@ -198,6 +198,7 @@ pub fn build_system_prompt(save_path: &str) -> String {
         - 如果用户的问题模糊到无法确定查询目标（如「那个花」），先反问用户确认，不要盲目猜测后查询\n\
         - 用户要求安排日程时，调 auto_schedule 工具，返回的 JSON 已是最终日程格式，直接原样输出即可（不要修改字段名、不要再调其他工具补充信息）\n\
         - 用中文回答\n\
+        - 所有 NPC 名字一律使用官方中文名，不要用英文名。常见对照：Abigail=阿比盖尔, Sebastian=塞巴斯缇安, Sam=山姆, Penny=潘妮, Leah=莉娅, Maru=玛鲁, Alex=亚历克斯, Haley=海莉, Emily=艾米丽, Shane=谢恩, Caroline=卡罗琳, Demetrius=德米崔斯, Dwarf=矮人, Elliott=艾里欧特, George=乔治, Gus=古斯, Jas=贾斯, Jodi=乔迪, Kent=肯特, Lewis=路易斯, Linus=莱纳斯, Marnie=玛妮, Pam=帕姆, Pierre=皮埃尔, Robin=罗宾, Sandy=桑迪, Vincent=文森特, Willy=威利, Wizard=法师, Krobus=科罗巴斯, Leo=雷欧\n\
         - 存档路径: {}\n\
         \n\
         回答方式：\n\

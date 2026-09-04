@@ -7,6 +7,7 @@ export function useChat() {
   const [loading, setLoading] = useState(false);
   const [progress, setProgress] = useState([]);
   const [error, setError] = useState(null);
+  const [sessionUsage, setSessionUsage] = useState({ input: 0, output: 0, cost: 0 });
   const unlistenRef = useRef([]);
   const typingTimerRef = useRef(null);
 
@@ -27,7 +28,7 @@ export function useChat() {
           }
         }),
         await listen("agent-done", () => {
-          // Don't clear here — only clear when final reply arrives
+          // Don't clear — only clear when final reply arrives
         }),
       ];
       if (cancelled) {
@@ -59,6 +60,12 @@ export function useChat() {
         const reply = await invoke("chat", { message: text });
         setLoading(false);
         setProgress([]);
+
+        // Refresh session usage after chat
+        try {
+          const u = await invoke("get_usage_detail");
+          setSessionUsage({ input: u.input_tokens, output: u.output_tokens, cost: u.cost });
+        } catch (_) {}
 
         const chars = [...reply];
         const totalTicks = Math.min(chars.length, 150);
@@ -114,15 +121,31 @@ export function useChat() {
     await invoke("interrupt");
   }, []);
 
+  const newSession = useCallback(async () => {
+    if (typingTimerRef.current) {
+      clearInterval(typingTimerRef.current);
+      typingTimerRef.current = null;
+    }
+    setProgress([]);
+    setMessages([]);
+    setSessionUsage({ input: 0, output: 0, cost: 0 });
+    await invoke("new_session");
+  }, []);
+
   const loadSession = useCallback(async (name) => {
     setError(null);
     setProgress([]);
     setMessages([]);
     setLoading(true);
     try {
-      await invoke("load_session", { name });
+      const result = await invoke("load_session", { name });
       const msgs = await invoke("get_messages");
       setMessages(msgs.map((m) => ({ ...m, typing: false })));
+      setSessionUsage({
+        input: result.session_input_tokens,
+        output: result.session_output_tokens,
+        cost: result.session_cost,
+      });
     } catch (e) {
       setError(String(e));
       setMessages((m) => [
@@ -134,5 +157,5 @@ export function useChat() {
     }
   }, []);
 
-  return { messages, loading, progress, error, send, interrupt, loadSession };
+  return { messages, loading, progress, error, send, interrupt, loadSession, newSession, sessionUsage };
 }
