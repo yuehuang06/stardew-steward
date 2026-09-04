@@ -26,9 +26,14 @@ export function useSessions() {
     await invoke("load_session", { name });
   }, []);
 
+  const remove = useCallback(async (name) => {
+    await invoke("delete_session", { name });
+    await refresh();
+  }, [refresh]);
+
   useEffect(() => {
     refresh();
   }, [refresh]);
 
-  return { sessions, loading, save, load, refresh };
+  return { sessions, loading, save, load, remove, refresh };
 }

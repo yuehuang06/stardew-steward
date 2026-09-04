@@ -17,7 +17,7 @@ export default function App() {
     useSaveStatus();
   const { expanded, toggle } = useWindowState();
   const { brief, refresh: refreshUsage } = useUsage();
-  const { sessions, load, refresh: refreshSessions } = useSessions();
+  const { sessions, load, remove, refresh: refreshSessions } = useSessions();
   const { onTop, toggle: toggleTop } = useAlwaysOnTop();
   const { config, usage, saving, update: updateConfig, refresh: refreshSettings } = useSettings();
   const [showSessions, setShowSessions] = useState(false);
@@ -122,6 +122,7 @@ export default function App() {
         <SessionPanel
           sessions={sessions}
           onLoad={handleLoadSession}
+          onDelete={remove}
           onClose={() => setShowSessions(false)}
         />
       )}

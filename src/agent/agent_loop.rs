@@ -162,6 +162,18 @@ impl Agent {
         Ok((self.history.len(), rounds, usage))
     }
 
+    /// R5: 删除指定会话文件
+    pub fn delete_session(name: &str) -> anyhow::Result<()> {
+        let path = format!(
+            "{}/{}.json",
+            session::sessions_dir(),
+            session::sanitize_name(name)
+        );
+        std::fs::remove_file(&path)
+            .map_err(|_| anyhow::anyhow!("会话「{}」不存在", name))?;
+        Ok(())
+    }
+
     /// 返回前端展示用的聊天消息（仅 user / assistant，跳过 system / tool）
     pub fn chat_messages(&self) -> Vec<(String, String)> {
         self.history

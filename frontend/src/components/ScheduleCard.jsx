@@ -14,6 +14,12 @@ const PRIORITY_LABEL = {
   could: "可选",
 };
 
+function getPriorityInfo(pri) {
+  const key = (pri || "").toLowerCase();
+  const label = PRIORITY_LABEL[key] || pri || "";
+  return { key, label };
+}
+
 export function ScheduleCard({ schedule }) {
   const net = schedule.total_income - schedule.total_cost;
 
@@ -25,7 +31,7 @@ export function ScheduleCard({ schedule }) {
 
       {schedule.tasks.map((task, i) => {
         const label = ACTION_LABEL[task.action] || ACTION_LABEL.other;
-        const pri = task.priority || "other";
+        const { key: priKey, label: priLabel } = getPriorityInfo(task.priority);
         return (
           <div key={i} className="sd-task-row">
             <span className="sd-task-icon">{label}</span>
@@ -43,8 +49,8 @@ export function ScheduleCard({ schedule }) {
                 +{task.income}g
               </span>
             )}
-            <span className={`sd-task-badge sd-priority-${pri}`}>
-              {PRIORITY_LABEL[pri] || pri}
+            <span className={`sd-task-badge sd-priority-${priKey}`}>
+              {priLabel}
             </span>
           </div>
         );

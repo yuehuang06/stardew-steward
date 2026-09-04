@@ -90,6 +90,11 @@ pub async fn new_session(state: State<'_, AppState>) -> Result<(), String> {
 }
 
 #[tauri::command]
+pub async fn delete_session(name: String) -> Result<(), String> {
+    Agent::delete_session(&name).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
 pub async fn list_sessions() -> Result<Vec<SessionInfo>, String> {
     let list = session::list_sessions();
     Ok(list

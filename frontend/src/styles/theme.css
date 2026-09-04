@@ -151,18 +151,18 @@ body {
 
 /* ---- 日程卡片 ---- */
 .sd-schedule {
-    background: var(--sd-parchment);
-    border: 2px solid var(--sd-wood-darker);
+    background: var(--sd-cream);
+    border: 2px solid var(--sd-frame-outer);
     box-shadow:
         inset 2px 2px 0 var(--sd-wood-light),
-        inset -2px -2px 0 var(--sd-wood-darker);
+        inset -2px -2px 0 var(--sd-frame-inner);
 }
 .sd-schedule-header {
-    background: var(--sd-wood);
+    background: var(--sd-frame-outer);
     color: var(--sd-cream);
     padding: 6px 10px;
     font-size: var(--sd-font-size);
-    border-bottom: 2px solid var(--sd-wood-darker);
+    border-bottom: 2px solid var(--sd-frame-inner);
     text-align: center;
 }
 .sd-task-row {

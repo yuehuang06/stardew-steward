@@ -9,7 +9,7 @@ function formatTime(ts) {
   return `${d.getMonth() + 1}/${d.getDate()} ${d.getHours()}:${String(d.getMinutes()).padStart(2, "0")}`;
 }
 
-export function SessionPanel({ sessions, onLoad, onClose }) {
+export function SessionPanel({ sessions, onLoad, onDelete, onClose }) {
   return (
     <div
       style={{
@@ -67,7 +67,6 @@ export function SessionPanel({ sessions, onLoad, onClose }) {
           sessions.map((s, i) => (
             <div
               key={i}
-              onClick={() => onLoad(s.name)}
               style={{
                 padding: "6px 8px",
                 marginBottom: "4px",
@@ -75,25 +74,48 @@ export function SessionPanel({ sessions, onLoad, onClose }) {
                 border: "2px solid var(--sd-wood-light)",
                 cursor: "pointer",
                 transition: "filter 0.1s",
+                display: "flex",
+                alignItems: "center",
+                gap: "4px",
               }}
               onMouseEnter={(e) => (e.currentTarget.style.filter = "brightness(0.95)")}
               onMouseLeave={(e) => (e.currentTarget.style.filter = "none")}
+              onClick={() => onLoad(s.name)}
             >
-              <div style={{ fontWeight: 600 }}>
-                {s.name}
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontWeight: 600 }}>
+                  {s.name}
+                </div>
+                <div
+                  style={{
+                    display: "flex",
+                    gap: "8px",
+                    color: "var(--sd-text-light)",
+                    marginTop: "2px",
+                  }}
+                >
+                  <span>{formatTime(s.saved_at)}</span>
+                  <span>消息 {s.message_count}</span>
+                  <span>轮次 {s.interaction_rounds}</span>
+                </div>
               </div>
-              <div
+              <button
+                className="sd-btn"
                 style={{
-                  display: "flex",
-                  gap: "8px",
-                  color: "var(--sd-text-light)",
-                  marginTop: "2px",
+                  flexShrink: 0,
+                  background: "var(--sd-red)",
+                  padding: "1px 5px",
+                  fontSize: "11px",
+                }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (confirm(`删除会话「${s.name}」？`)) {
+                    onDelete(s.name);
+                  }
                 }}
               >
-                <span>{formatTime(s.saved_at)}</span>
-                <span>消息 {s.message_count}</span>
-                <span>轮次 {s.interaction_rounds}</span>
-              </div>
+                删
+              </button>
             </div>
           ))
         )}
