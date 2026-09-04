@@ -4,7 +4,7 @@
 :root {
     --sd-frame-outer: #773B17;
     --sd-frame-mid:   #E79638;
-    --sd-frame-inner: #9F5420;
+    --sd-frame-inner: #A1521F;
     --sd-wood-dark:   #927258;
     --sd-wood:        #927258;
     --sd-wood-light:  #b09078;
@@ -48,7 +48,7 @@ body {
     background: var(--sd-parchment);
     background-clip: padding-box;
     border: 9px solid transparent;
-    border-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABsAAAAbCAYAAACN1PRVAAAAV0lEQVR4nGOYH6LwH4afT7OA43JrcbIxsjnI5jMMX8twSSCLk4pxmTOMLSMmrEnFuOJ+hFvGQAQYtWzUslHLhpBlw7e4oppldK3Phq9lxIT10GzK0dMyAAORqUzOUZTSAAAAAElFTkSuQmCC") 9;
+    border-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABsAAAAbCAYAAACN1PRVAAAAY0lEQVR4nGNgwAHmhyj8h+Fya3GSMC4zcYLhZRmyBc+nWZCNkc0ZIZbhsgA5DpDVEINxmTOMLUPmkBzJJEbHqGWjlo1aNkgsIwYT5ejhaxkx4T40K88BswwZkNqiItmCYWUZAIXhoUnhkPWmAAAAAElFTkSuQmCC") 9;
     padding: 0;
     border-radius: 0;
 }
