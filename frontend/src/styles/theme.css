@@ -70,8 +70,8 @@ body {
     background: var(--sd-cream);
     border: 2px solid var(--sd-wood-darker);
     box-shadow:
-        inset 1px 1px 0 var(--sd-cream),
-        inset -1px -1px 0 var(--sd-wood-dark);
+        inset 0 3px 0 var(--sd-frame-mid),
+        inset 0 6px 0 var(--sd-frame-inner);
     border-radius: 0;
 }
 
