@@ -26,15 +26,16 @@ export function ChatMessage({ msg }) {
           wordBreak: "break-word",
         }}
       >
-        <div
-          style={{
-            color: "var(--sd-text-light)",
-            marginBottom: "2px",
-            padding: schedule ? "4px 8px 0" : 0,
-          }}
-        >
-          {isUser ? "你" : "管家"}
-        </div>
+        {!isUser ? null : (
+          <div
+            style={{
+              color: "var(--sd-text-light)",
+              marginBottom: "2px",
+            }}
+          >
+            你
+          </div>
+        )}
         {schedule ? (
           <ScheduleCard schedule={schedule} />
         ) : isUser ? (

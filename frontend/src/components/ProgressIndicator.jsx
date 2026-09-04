@@ -14,7 +14,7 @@ export function ProgressIndicator({ progress, done }) {
     >
       {progress.map((item, i) => {
         const isLast = i === progress.length - 1;
-        const label = item.type === "error" ? "[错]" : item.type === "thinking" ? "[想]" : "[步]";
+        const label = item.type === "error" ? "[错误]" : item.type === "thinking" ? "[思考]" : "[执行]";
         return (
           <div key={i} style={{ display: "flex", gap: "6px", alignItems: "flex-start" }}>
             <span style={{ flexShrink: 0 }}>{label}</span>
