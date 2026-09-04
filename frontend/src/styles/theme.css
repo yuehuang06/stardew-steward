@@ -43,13 +43,26 @@ body {
     line-height: 1.5;
 }
 
-/* ---- 窗口外边框（9-slice 像素木框 + 斜角切边） ---- */
+/* ---- 窗口外边框（9-slice 像素木框 3px×3层 + 斜角切边） ---- */
 .sd-panel {
     background: var(--sd-parchment);
-    border: 6px solid transparent;
-    border-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABIAAAASCAYAAABWzo5XAAAAUElEQVR4nGNgQAMLQuT+g3C5tThWDJNH14cBKDYIpgCGz9QaYMXo6qhvELoEuZh6BsECEd3phMISph6mf9Qgeho0+NIRupMHPq/hMnDAyiMAHCP1oBxywhMAAAAASUVORK5CYII=") 6;
+    background-clip: padding-box;
+    border: 9px solid transparent;
+    border-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABsAAAAbCAYAAACN1PRVAAAAZElEQVR4nGNgwAEWhMj9h+Fya3GCGFk9LjNxguFlGbIGZHym1oAgxqV3hFiGSxEt8DC2DDn54ooDUlMysjnI5o9aNmrZqGV0sGz4Fld0tQxXuOOKg6FTeQ6YZbgsHvpNOVpbBgBZqGjBxiyMOwAAAABJRU5ErkJggg==") 9;
     padding: 0;
     border-radius: 0;
+}
+
+/* ---- 三层分隔线 ---- */
+.sd-sep {
+    border: 0;
+    border-top: 3px solid var(--sd-frame-outer);
+    box-shadow:
+        inset 0 3px 0 var(--sd-frame-mid),
+        inset 0 6px 0 var(--sd-frame-inner);
+    height: 9px;
+    background: transparent;
+    flex-shrink: 0;
 }
 
 /* ---- 聊天气泡 ---- */
