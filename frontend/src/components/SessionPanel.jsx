@@ -1,5 +1,3 @@
-import { useState, useRef } from "react";
-
 function formatTime(ts) {
   if (!ts) return "";
   const d = new Date(ts * 1000);
@@ -11,21 +9,7 @@ function formatTime(ts) {
   return `${d.getMonth() + 1}/${d.getDate()} ${d.getHours()}:${String(d.getMinutes()).padStart(2, "0")}`;
 }
 
-export function SessionPanel({ sessions, onSave, onLoad, onClose }) {
-  const nameRef = useRef(null);
-  const [saving, setSaving] = useState(false);
-
-  const handleSave = async () => {
-    const name = nameRef.current?.value?.trim() || "untitled";
-    setSaving(true);
-    try {
-      await onSave(name);
-      if (nameRef.current) nameRef.current.value = "";
-    } finally {
-      setSaving(false);
-    }
-  };
-
+export function SessionPanel({ sessions, onLoad, onClose }) {
   return (
     <div
       style={{
@@ -55,36 +39,13 @@ export function SessionPanel({ sessions, onSave, onLoad, onClose }) {
           flexShrink: 0,
         }}
       >
-        <span style={{ flex: 1, fontSize: "13px" }}>会话管理</span>
+        <span style={{ flex: 1, fontSize: "13px" }}>历史会话</span>
         <button
           className="sd-btn"
           style={{ fontSize: "11px", padding: "2px 6px" }}
           onClick={onClose}
         >
           X
-        </button>
-      </div>
-
-      <div style={{ padding: "6px 8px", flexShrink: 0, display: "flex", gap: "4px" }}>
-        <input
-          ref={nameRef}
-          type="text"
-          lang="zh-CN"
-          className="sd-input"
-          style={{ flex: 1, fontSize: "13px" }}
-          placeholder="会话名称..."
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && !e.isComposing) handleSave();
-          }}
-          disabled={saving}
-        />
-        <button
-          className="sd-btn sd-btn-green"
-          style={{ fontSize: "12px" }}
-          onClick={handleSave}
-          disabled={saving}
-        >
-          保存
         </button>
       </div>
 
@@ -98,7 +59,10 @@ export function SessionPanel({ sessions, onSave, onLoad, onClose }) {
               fontSize: "12px",
             }}
           >
-            还没有保存的会话
+            还没有历史会话
+            <br />
+            <br />
+            对话结束后会自动保存
           </div>
         ) : (
           sessions.map((s, i) => (

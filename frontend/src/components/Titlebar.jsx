@@ -13,13 +13,18 @@ export function Titlebar({ status, expanded, onToggle, onRefresh, onTop, onToggl
         padding: "3px 6px",
       }}
     >
-      <div data-tauri-drag-region style={{ fontSize: "12px", textAlign: "center", cursor: "default" }}>
+      <div data-tauri-drag-region style={{ cursor: "default", textAlign: "center" }}>
         {status ? (
           <>
-            {status.date} · {status.money}g · {status.weather}
+            <div style={{ fontSize: "12px" }}>
+              {status.date} · {status.money}g
+            </div>
+            <div style={{ fontSize: "11px" }}>
+              {status.weather}
+            </div>
           </>
         ) : (
-          "星露谷农场管家"
+          <div style={{ fontSize: "12px" }}>星露谷农场管家</div>
         )}
       </div>
       <div style={{ display: "flex", gap: "3px" }}>
@@ -27,7 +32,7 @@ export function Titlebar({ status, expanded, onToggle, onRefresh, onTop, onToggl
           {onTop ? "置顶" : "置底"}
         </button>
         <button className="sd-btn" style={btnStyle} onClick={onOpenSessions}>
-          会话
+          历史
         </button>
         <button className="sd-btn" style={btnStyle} onClick={onRefresh}>
           刷新

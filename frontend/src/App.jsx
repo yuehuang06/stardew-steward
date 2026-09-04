@@ -15,7 +15,7 @@ export default function App() {
     useSaveStatus();
   const { expanded, toggle } = useWindowState();
   const { brief, refresh: refreshUsage } = useUsage();
-  const { sessions, save, load, refresh: refreshSessions } = useSessions();
+  const { sessions, load, refresh: refreshSessions } = useSessions();
   const { onTop, toggle: toggleTop } = useAlwaysOnTop();
   const [showSessions, setShowSessions] = useState(false);
   const scrollRef = useRef(null);
@@ -35,6 +35,7 @@ export default function App() {
   const handleSend = async (text) => {
     await send(text);
     refreshStatus();
+    refreshSessions();
   };
 
   const handleLoadSession = async (name) => {
@@ -114,7 +115,6 @@ export default function App() {
       {showSessions && (
         <SessionPanel
           sessions={sessions}
-          onSave={save}
           onLoad={handleLoadSession}
           onClose={() => setShowSessions(false)}
         />

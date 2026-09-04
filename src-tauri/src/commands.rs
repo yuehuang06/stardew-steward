@@ -20,7 +20,10 @@ pub async fn chat(state: State<'_, AppState>, message: String) -> Result<String,
         .interrupt_flag
         .store(false, std::sync::atomic::Ordering::SeqCst);
     let mut agent = state.agent.lock().await;
-    agent.run(&message).await.map_err(|e| e.to_string())
+    let result = agent.run(&message).await.map_err(|e| e.to_string());
+    // Auto-save session after each interaction round
+    let _ = agent.auto_save_session();
+    result
 }
 
 #[tauri::command]
@@ -128,20 +131,19 @@ pub async fn interrupt(state: State<'_, AppState>) -> Result<(), String> {
 
 #[tauri::command]
 pub async fn toggle_window_width(window: tauri::WebviewWindow) -> Result<bool, String> {
+    let scale = window.scale_factor().unwrap_or(1.0);
     let cur = window.inner_size().map_err(|e| e.to_string())?;
-    let expanded = cur.width <= 300;
-    let start_w = cur.width as i32;
-    let end_w = if expanded { 480 } else { 280 };
+    let cur_logical_w = (cur.width as f64 / scale) as f64;
+    let cur_logical_h = (cur.height as f64 / scale) as f64;
+    let expanded = cur_logical_w <= 300.0;
+    let start_w = cur_logical_w;
+    let end_w = if expanded { 480.0 } else { 280.0 };
     let steps = 15;
     for i in 1..=steps {
-        let t = i as f32 / steps as f32;
-        // ease-out cubic
+        let t = i as f64 / steps as f64;
         let eased = 1.0 - (1.0 - t).powi(3);
-        let w = (start_w as f32 + (end_w - start_w) as f32 * eased) as i32;
-        let _ = window.set_size(tauri::Size::Physical(tauri::PhysicalSize {
-            width: w as u32,
-            height: cur.height,
-        }));
+        let w = start_w + (end_w - start_w) * eased;
+        let _ = window.set_size(tauri::Size::Logical(tauri::LogicalSize::new(w, cur_logical_h)));
         tokio::time::sleep(std::time::Duration::from_millis(12)).await;
     }
     Ok(expanded)
