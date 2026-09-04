@@ -1,7 +1,18 @@
+[workspace]
+members = ["src-tauri"]
+
 [package]
 name = "stardew-steward"
 version = "0.1.0"
 edition = "2024"
+
+[lib]
+name = "stardew_steward"
+path = "src/lib.rs"
+
+[[bin]]
+name = "stardew-steward"
+path = "src/main.rs"
 
 [dependencies]
 # 存档解析

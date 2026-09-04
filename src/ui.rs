@@ -1,4 +1,4 @@
-use crate::agent::ProgressReporter;
+use stardew_steward::agent::ProgressReporter;
 
 pub struct CliReporter;
 
@@ -15,6 +15,14 @@ impl ProgressReporter for CliReporter {
 
     fn on_done(&self) {
         println!("  ✓ 完成");
+    }
+
+    fn on_thinking(&self, message: &str) {
+        println!("  💭 {}", message);
+    }
+
+    fn on_error(&self, message: &str) {
+        println!("  ✗ {}", message);
     }
 }
 

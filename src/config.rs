@@ -1,6 +1,6 @@
 use serde::Deserialize;
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Clone)]
 pub struct Config {
     pub model: ModelConfig,
     pub save: SaveConfig,
@@ -8,7 +8,7 @@ pub struct Config {
     pub knowledge: KnowledgeConfig,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Clone)]
 pub struct ModelConfig {
     pub endpoint: String,
     pub api_key: String,
@@ -19,18 +19,18 @@ pub struct ModelConfig {
     pub price_output: f64,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Clone)]
 pub struct SaveConfig {
     pub path: String,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Clone)]
 pub struct AgentConfig {
     pub token_budget: u64,
     pub max_steps: u32,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Clone)]
 pub struct KnowledgeConfig {
     pub db_path: String,
 }

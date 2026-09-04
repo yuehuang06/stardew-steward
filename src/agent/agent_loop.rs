@@ -191,18 +191,18 @@ impl Agent {
             let response = match step {
                 LlmStep::Done(Ok(resp)) => resp,
                 LlmStep::Done(Err(e)) => {
-                    println!("  ✗ 调用失败");
+                    self.reporter.on_error("调用失败");
                     return Err(e);
                 }
                 LlmStep::Stop => {
-                    println!("  ✗ 已打断");
+                    self.reporter.on_error("已打断");
                     return Ok("(用户已打断本轮任务)".into());
                 }
             };
 
             if let Some(tool_call) = response.tool_call {
                 if !response.assistant_content.is_empty() {
-                    println!("  💭 {}", response.assistant_content);
+                    self.reporter.on_thinking(&response.assistant_content);
                 }
                 let tool_desc = describe_tool_call(&tool_call);
                 let tool_msg = Message::assistant_with_tool_calls(

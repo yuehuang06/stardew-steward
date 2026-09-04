@@ -1,0 +1,116 @@
+@import url('https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;500;600;700&display=swap');
+
+:root {
+    --sd-wood-dark:   #3a2010;
+    --sd-wood:        #5a3a1a;
+    --sd-wood-light:  #8b5e34;
+    --sd-parchment:   #f0e0c0;
+    --sd-parchment-d: #e0d0a8;
+    --sd-cream:       #fff8e7;
+    --sd-text:        #3a2817;
+    --sd-text-light:  #6a5837;
+    --sd-green:       #5a7a3a;
+    --sd-green-d:     #3a5a1a;
+    --sd-gold:        #d4a64a;
+    --sd-red:         #c45a3a;
+    --sd-blue:        #4a6a8a;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Pixelify Sans', monospace;
+    image-rendering: pixelated;
+    -webkit-font-smoothing: none;
+}
+
+html, body, #root {
+    height: 100%;
+    overflow: hidden;
+}
+
+body {
+    background: transparent;
+    color: var(--sd-text);
+    font-size: 15px;
+    line-height: 1.5;
+}
+
+/* ---- 星露谷木框面板 ---- */
+.sd-panel {
+    background: var(--sd-parchment);
+    border: 3px solid var(--sd-wood);
+    box-shadow:
+        inset 0 0 0 2px var(--sd-wood-dark),
+        inset 0 0 0 5px var(--sd-wood-light),
+        0 0 0 2px var(--sd-wood-dark);
+    border-radius: 0;
+}
+
+/* ---- 按钮 ---- */
+.sd-btn {
+    background: var(--sd-wood);
+    color: var(--sd-cream);
+    border: 2px solid var(--sd-wood-dark);
+    box-shadow: inset 0 0 0 2px var(--sd-wood-light);
+    padding: 4px 12px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: filter 0.1s;
+    border-radius: 0;
+}
+.sd-btn:hover {
+    filter: brightness(1.15);
+}
+.sd-btn:active {
+    filter: brightness(0.85);
+}
+.sd-btn-green {
+    background: var(--sd-green);
+    box-shadow: inset 0 0 0 2px #7a9a5a;
+}
+
+/* ---- 输入框 ---- */
+.sd-input {
+    background: var(--sd-cream);
+    color: var(--sd-text);
+    border: 2px solid var(--sd-wood-dark);
+    box-shadow: inset 1px 1px 0 var(--sd-parchment-d);
+    padding: 6px 8px;
+    font-size: 14px;
+    border-radius: 0;
+    outline: none;
+}
+.sd-input:focus {
+    border-color: var(--sd-gold);
+}
+
+/* ---- 滚动条 ---- */
+::-webkit-scrollbar {
+    width: 8px;
+}
+::-webkit-scrollbar-track {
+    background: var(--sd-parchment-d);
+}
+::-webkit-scrollbar-thumb {
+    background: var(--sd-wood);
+    border: 1px solid var(--sd-wood-dark);
+}
+
+/* ---- 动画 ---- */
+@keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+}
+.sd-blink {
+    animation: blink 1s infinite;
+}
+
+@keyframes slide-in {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+.sd-slide-in {
+    animation: slide-in 0.2s ease-out;
+}
