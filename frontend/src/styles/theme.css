@@ -70,10 +70,14 @@ body {
     background: var(--sd-cream);
     border: none;
     box-shadow:
-        inset 3px 0 0 -3px #C7925E,
-        inset 0 -3px 0 -3px #C7925E,
-        inset -3px 0 0 -3px #F7E4AA,
-        inset 0 3px 0 -3px #F7E4AA;
+        inset 0 3px 0 #F7E4AA,
+        inset 0 -3px 0 #C7925E,
+        inset 3px 0 0 #C7925E,
+        inset -3px 0 0 #F7E4AA;
+    clip-path: polygon(
+        3px 0, calc(100% - 3px) 0, 100% 3px, 100% calc(100% - 3px),
+        calc(100% - 3px) 100%, 3px 100%, 0 calc(100% - 3px), 0 3px
+    );
     border-radius: 0;
 }
 
@@ -111,10 +115,14 @@ body {
     color: var(--sd-text);
     border: none;
     box-shadow:
-        inset 3px 0 0 -3px #F7E4AA,
-        inset 0 -3px 0 -3px #F7E4AA,
-        inset -3px 0 0 -3px #C7925E,
-        inset 0 3px 0 -3px #C7925E;
+        inset 0 3px 0 #C7925E,
+        inset 0 -3px 0 #F7E4AA,
+        inset 3px 0 0 #F7E4AA,
+        inset -3px 0 0 #C7925E;
+    clip-path: polygon(
+        3px 0, calc(100% - 3px) 0, 100% 3px, 100% calc(100% - 3px),
+        calc(100% - 3px) 100%, 3px 100%, 0 calc(100% - 3px), 0 3px
+    );
     padding: 9px 11px;
     font-size: var(--sd-font-size);
     border-radius: 0;
