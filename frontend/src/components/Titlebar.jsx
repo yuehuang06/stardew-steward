@@ -4,6 +4,7 @@ export function Titlebar({ status, expanded, onToggle, onRefresh, onTop, onToggl
   const btnStyle = { flex: 1, padding: "2px 4px", lineHeight: 1, height: "22px" };
   return (
     <div
+      data-tauri-drag-region
       style={{
         background: "var(--sd-wood)",
         color: "var(--sd-cream)",

@@ -50,10 +50,10 @@ body {
     border-radius: 0;
 }
 
-/* ---- 聊天气泡（细边框） ---- */
+/* ---- 聊天气泡（中等边框） ---- */
 .sd-bubble {
-    background: var(--sd-parchment);
-    border: 1px solid var(--sd-wood-dark);
+    background: var(--sd-cream);
+    border: 2px solid var(--sd-wood-dark);
     border-radius: 0;
 }
 

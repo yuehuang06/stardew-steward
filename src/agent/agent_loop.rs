@@ -227,7 +227,7 @@ impl Agent {
                 );
                 self.history.push(tool_msg);
 
-                self.reporter.on_step(&format!("正在执行: {}", tool_desc));
+                self.reporter.on_step(&tool_desc);
                 let result = self.tools.execute(&tool_call).await?;
                 self.reporter.on_done();
 
@@ -394,16 +394,25 @@ async fn poll_flag(flag: Arc<AtomicBool>) {
 /// 从工具调用参数中提取关键信息，生成人类可读的描述
 fn describe_tool_call(call: &ToolCallRequest) -> String {
     match call.name.as_str() {
-        "read_save" => "读取存档".to_string(),
+        "read_save" => "正在读取存档".to_string(),
         "query_knowledge" => {
             let kw = call.arguments["keyword"].as_str().unwrap_or("");
-            format!("查询知识库: {}", kw)
+            format!("正在查询知识库: {}", kw)
+        }
+        "fetch_wiki" => {
+            let kw = call.arguments["keyword"].as_str().unwrap_or("");
+            if kw.is_empty() {
+                "正在从 wiki 寻找更多知识".to_string()
+            } else {
+                format!("正在从 wiki 寻找: {}", kw)
+            }
         }
         "solve_schedule" => {
             let tasks = call.arguments["tasks"].as_array().map(|a| a.len()).unwrap_or(0);
-            format!("求解日程（{}项任务）", tasks)
+            format!("正在求解日程（{}项任务）", tasks)
         }
-        _ => call.name.clone(),
+        "auto_schedule" => "正在自动生成日程".to_string(),
+        _ => format!("正在执行: {}", call.name),
     }
 }
 
