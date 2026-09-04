@@ -1,6 +1,6 @@
 # Stardew Steward 开发进度
 
-> 最后更新: 2026-09-04
+> 最后更新: 2026-09-05
 
 ---
 
@@ -29,15 +29,22 @@
 **阶段 3: Tauri GUI 客户端**
 - `src-tauri/` — Tauri 2 后端, 依赖 stardew_steward 库
 - `src-tauri/src/reporter.rs` — TauriReporter, 把进度推送为前端事件
-- `src-tauri/src/commands.rs` — 11 个 Tauri 命令 (chat/interrupt/get_save_status/save_session/load_session/list_sessions 等)
+- `src-tauri/src/commands.rs` — 13 个 Tauri 命令 (chat/interrupt/get_save_status/save_session/load_session/list_sessions/get_messages/toggle_always_on_top 等)
 - `src-tauri/src/main.rs` — 初始化 Agent + 注册命令 + 窗口配置
 - `src-tauri/tauri.conf.json` — 窗口: 透明/无边框/始终置顶/可伸缩 (280px→480px)
 - `frontend/` — React 18 + Vite 5
 - `frontend/src/styles/theme.css` — 星露谷配色 (木框/羊皮纸) + Pixelify Sans 像素字体
-- `frontend/src/App.jsx` — 侧边栏布局: 标题栏 + 聊天区 + 输入框
-- `frontend/src/components/` — Titlebar / ChatMessage / ProgressIndicator / InputBar
-- `frontend/src/hooks/` — useChat (发消息/收事件) / useWindowState (窗口伸缩/存档状态/用量)
+- `frontend/src/App.jsx` — 侧边栏布局: 标题栏 + 聊天区 + 输入框 + 会话面板
+- `frontend/src/components/` — Titlebar / ChatMessage / ProgressIndicator / InputBar / ScheduleCard / SessionPanel
+- `frontend/src/hooks/` — useChat (发消息/收事件/加载会话) / useWindowState (窗口伸缩/存档状态/用量) / useSessions / useAlwaysOnTop
+- `frontend/src/utils/` — parseSchedule (从消息文本提取日程 JSON)
 - 后端编译通过, 前端构建通过
+
+**阶段 4: GUI 功能完善**
+- 日程卡片渲染 — ScheduleCard 组件: Agent 返回的 DailySchedule JSON 渲染成星露谷风格卡片 (任务行/动作图标/耗时花费收入徽章/优先级颜色/总计栏/提醒)
+- 会话管理 UI — SessionPanel 组件: 保存当前会话/加载历史会话, 显示时间戳和消息数
+- 始终置顶开关 — Titlebar 图钉按钮, toggle_always_on_top 命令
+- 窗口伸缩动画 — toggle_window_width 改为 15 步 ease-out cubic 插值动画 (~180ms)
 
 ### 进行中
 
@@ -45,14 +52,9 @@
 
 ### 待办
 
-- [ ] 日程卡片渲染 — Agent 返回的 Markdown 表格需要前端渲染成星露谷风格卡片
-- [ ] 会话管理 UI — 前端界面调用 save_session/load_session/list_sessions
 - [ ] `cargo tauri dev` 实际运行测试 — 需要图形环境
-- [ ] 窗口伸缩动画平滑化 — 当前 set_size 瞬间跳变, 可加 CSS transition
 - [ ] 图标替换 — 当前是纯色占位 PNG, 需要像素风图标
-- [ ] 始终置顶开关 — 前端按钮切换 alwaysOnTop
 - [ ] 知识库数据补全 — crops/npcs/fish 数据仍需扩充
-- [ ] README.md 更新 — 补充 GUI 相关说明
 
 ---
 
@@ -165,23 +167,13 @@ stardew-steward/
    ```
    预期问题: WSL 下透明窗口可能黑底, 需要 `WSLg` 支持
 
-2. **日程卡片渲染** — `frontend/src/components/ScheduleCard.jsx`
-   - Agent 返回 Markdown 表格, 前端解析渲染成星露谷风格卡片
-   - 或: 让后端返回 JSON, 前端直接渲染组件
-
-3. **会话管理 UI** — 前端侧边菜单调用 save/load/list 命令
-
-### 短期改进
-
-4. **窗口伸缩动画** — `toggle_window_width` 加逐步 set_size 循环, 或前端 CSS transition 配合
-5. **图标** — 用像素画工具画 32x32 / 128x128 星露谷风图标
-6. **始终置顶切换** — 前端按钮调 `set_always_on_top`
+2. **图标** — 用像素画工具画 32x32 / 128x128 星露谷风图标
 
 ### 长期
 
-7. **知识库补全** — 扩充 data/*.json, 或用 fetch_wiki 缓存更多数据
-8. **存档监听** — notify crate 监听存档文件变化, 自动刷新状态
-9. **存档 diff** — 睡觉后存档变化, 自动生成战报
+3. **知识库补全** — 扩充 data/*.json, 或用 fetch_wiki 缓存更多数据
+4. **存档监听** — notify crate 监听存档文件变化, 自动刷新状态
+5. **存档 diff** — 睡觉后存档变化, 自动生成战报
 
 ---
 
