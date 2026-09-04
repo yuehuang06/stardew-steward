@@ -105,10 +105,13 @@ body {
 
 /* ---- 输入框 ---- */
 .sd-input {
-    background: var(--sd-cream);
+    background: transparent;
     color: var(--sd-text);
-    border: 2px solid var(--sd-wood-darker);
-    box-shadow: inset 1px 1px 0 var(--sd-parchment-d);
+    border: none;
+    border-left: 3px solid #F7E4AA;
+    border-bottom: 3px solid #F7E4AA;
+    border-right: 3px solid #C7925E;
+    border-top: 3px solid #C7925E;
     padding: 6px 8px;
     font-size: var(--sd-font-size);
     border-radius: 0;

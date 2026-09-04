@@ -53,7 +53,7 @@ export function InputBar({ onSend, onInterrupt, loading, usageBrief }) {
           ) : (
             <button
               className="sd-btn sd-btn-green"
-              style={{ width: "32px", padding: 0, display: "flex", alignItems: "center", justifyContent: "center" }}
+              style={{ width: "24px", padding: 0, display: "flex", alignItems: "center", justifyContent: "center" }}
               onClick={handleSend}
             >
               {"\u2192"}

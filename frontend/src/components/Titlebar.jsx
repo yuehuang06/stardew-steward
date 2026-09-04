@@ -21,8 +21,8 @@ export function Titlebar({ status, expanded, onToggle, onRefresh, onTop, onToggl
             position: "absolute",
             top: "2px",
             right: "4px",
-            width: "18px",
-            height: "18px",
+            width: "24px",
+            height: "24px",
             padding: 0,
             lineHeight: 1,
             background: "var(--sd-red)",
@@ -48,7 +48,7 @@ export function Titlebar({ status, expanded, onToggle, onRefresh, onTop, onToggl
             <div>星露谷农场管家</div>
           )}
         </div>
-        <div style={{ display: "flex", gap: "3px", paddingRight: "22px" }}>
+        <div style={{ display: "flex", gap: "3px", paddingRight: "28px" }}>
           <button className="sd-btn" style={btnStyle} onClick={onToggleTop}>
             {onTop ? "置顶" : "置底"}
           </button>
