@@ -114,3 +114,89 @@ body {
 .sd-slide-in {
     animation: slide-in 0.2s ease-out;
 }
+
+/* ---- 日程卡片 ---- */
+.sd-schedule {
+    background: var(--sd-parchment);
+    border: 3px solid var(--sd-wood);
+    box-shadow:
+        inset 0 0 0 2px var(--sd-wood-dark),
+        inset 0 0 0 5px var(--sd-wood-light);
+}
+.sd-schedule-header {
+    background: var(--sd-wood);
+    color: var(--sd-cream);
+    padding: 6px 10px;
+    font-size: 13px;
+    border-bottom: 2px solid var(--sd-wood-dark);
+    text-align: center;
+}
+.sd-task-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 8px;
+    border-bottom: 1px dashed var(--sd-parchment-d);
+    font-size: 13px;
+}
+.sd-task-row:last-child {
+    border-bottom: none;
+}
+.sd-task-icon {
+    font-size: 16px;
+    flex-shrink: 0;
+    width: 20px;
+    text-align: center;
+}
+.sd-task-desc {
+    flex: 1;
+    min-width: 0;
+    word-break: break-word;
+}
+.sd-task-badge {
+    font-size: 10px;
+    padding: 1px 5px;
+    border: 1px solid var(--sd-wood-dark);
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+.sd-badge-time {
+    background: var(--sd-blue);
+    color: var(--sd-cream);
+}
+.sd-badge-cost {
+    background: var(--sd-red);
+    color: var(--sd-cream);
+}
+.sd-badge-income {
+    background: var(--sd-green);
+    color: var(--sd-cream);
+}
+.sd-priority-must {
+    background: var(--sd-red);
+    color: var(--sd-cream);
+}
+.sd-priority-should {
+    background: var(--sd-gold);
+    color: var(--sd-text);
+}
+.sd-priority-could {
+    background: var(--sd-blue);
+    color: var(--sd-cream);
+}
+.sd-schedule-footer {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    padding: 5px 8px;
+    background: var(--sd-parchment-d);
+    border-top: 2px solid var(--sd-wood-dark);
+    font-size: 12px;
+    flex-wrap: wrap;
+}
+.sd-schedule-notes {
+    padding: 4px 10px 6px;
+    font-size: 11px;
+    color: var(--sd-text-light);
+    border-top: 1px dashed var(--sd-parchment-d);
+}
