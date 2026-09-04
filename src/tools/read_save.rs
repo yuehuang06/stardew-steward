@@ -65,12 +65,12 @@ pub fn execute(path: &str) -> anyhow::Result<String> {
 
     let compact = CompactState {
         money: state.money,
-        date: format!("第{}年 {} {}日", state.date.year, state.date.season, state.date.day),
+        date: format!("第{}年 {} {}日", state.date.year, season_cn(&state.date.season), state.date.day),
         weather: format!(
             "今天{}{}，明天{}",
             if state.weather.is_raining { "下雨" } else { "晴天" },
             if state.weather.is_lightning { "打雷" } else { "" },
-            state.weather.tomorrow,
+            weather_cn(&state.weather.tomorrow),
         ),
         luck: {
             // 分层与官方电视占卜频道一致（wiki: TV::getFortuneForecast）
@@ -115,4 +115,26 @@ pub fn execute(path: &str) -> anyhow::Result<String> {
     };
 
     Ok(serde_json::to_string_pretty(&compact)?)
+}
+
+fn season_cn(s: &str) -> &str {
+    match s.to_lowercase().as_str() {
+        "spring" => "春",
+        "summer" => "夏",
+        "fall" => "秋",
+        "winter" => "冬",
+        _ => s,
+    }
+}
+
+fn weather_cn(s: &str) -> &str {
+    match s.to_lowercase().as_str() {
+        "sun" => "晴天",
+        "rain" => "雨天",
+        "snow" => "雪天",
+        "storm" => "暴雨",
+        "wind" => "大风",
+        "fallleaves" => "落叶",
+        _ => s,
+    }
 }

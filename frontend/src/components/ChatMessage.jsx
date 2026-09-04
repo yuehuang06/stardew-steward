@@ -1,5 +1,6 @@
 import { tryParseSchedule } from "../utils/parseSchedule";
 import { ScheduleCard } from "./ScheduleCard";
+import { Markdown } from "./Markdown";
 
 export function ChatMessage({ msg }) {
   const isUser = msg.role === "user";
@@ -37,8 +38,10 @@ export function ChatMessage({ msg }) {
         </div>
         {schedule ? (
           <ScheduleCard schedule={schedule} />
-        ) : (
+        ) : isUser ? (
           msg.text
+        ) : (
+          <Markdown>{msg.text}</Markdown>
         )}
       </div>
     </div>
