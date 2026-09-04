@@ -1,21 +1,19 @@
 export function Titlebar({ status, expanded, onToggle, onRefresh, onTop, onToggleTop, onOpenSessions }) {
-  const btnStyle = { fontSize: "12px", padding: "1px 4px", lineHeight: 1, minWidth: "24px", height: "22px", display: "flex", alignItems: "center", justifyContent: "center" };
+  const btnStyle = { flex: 1, fontSize: "11px", padding: "2px 4px", lineHeight: 1, height: "20px" };
   return (
     <div
-      data-tauri-drag-region
       style={{
-        display: "flex",
-        alignItems: "center",
-        gap: "3px",
-        padding: "3px 6px",
         background: "var(--sd-wood)",
         color: "var(--sd-cream)",
         borderBottom: "2px solid var(--sd-wood-dark)",
-        cursor: "default",
         flexShrink: 0,
+        display: "flex",
+        flexDirection: "column",
+        gap: "3px",
+        padding: "3px 6px",
       }}
     >
-      <span style={{ fontSize: "13px", flex: 1, fontFamily: "var(--sd-font-body)" }} data-tauri-drag-region>
+      <div data-tauri-drag-region style={{ fontSize: "12px", textAlign: "center", cursor: "default" }}>
         {status ? (
           <>
             {status.date} · {status.money}g · {status.weather}
@@ -23,35 +21,21 @@ export function Titlebar({ status, expanded, onToggle, onRefresh, onTop, onToggl
         ) : (
           "星露谷农场管家"
         )}
-      </span>
-      <button
-        className="sd-btn"
-        style={btnStyle}
-        onClick={onToggleTop}
-      >
-        {onTop ? "置顶" : "置底"}
-      </button>
-      <button
-        className="sd-btn"
-        style={btnStyle}
-        onClick={onOpenSessions}
-      >
-        会话
-      </button>
-      <button
-        className="sd-btn"
-        style={btnStyle}
-        onClick={onRefresh}
-      >
-        刷新
-      </button>
-      <button
-        className="sd-btn"
-        style={btnStyle}
-        onClick={onToggle}
-      >
-        {expanded ? "收" : "展"}
-      </button>
+      </div>
+      <div style={{ display: "flex", gap: "3px" }}>
+        <button className="sd-btn" style={btnStyle} onClick={onToggleTop}>
+          {onTop ? "置顶" : "置底"}
+        </button>
+        <button className="sd-btn" style={btnStyle} onClick={onOpenSessions}>
+          会话
+        </button>
+        <button className="sd-btn" style={btnStyle} onClick={onRefresh}>
+          刷新
+        </button>
+        <button className="sd-btn" style={btnStyle} onClick={onToggle}>
+          {expanded ? "收起" : "展开"}
+        </button>
+      </div>
     </div>
   );
 }
