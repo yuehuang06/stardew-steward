@@ -87,7 +87,7 @@ export default function App() {
             style={{
               textAlign: "center",
               marginTop: "40px",
-              color: "var(--sd-text-light)",
+              color: "var(--sd-text)",
             }}
           >
             欢迎回来，农场主！

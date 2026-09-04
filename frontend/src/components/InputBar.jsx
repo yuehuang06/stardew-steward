@@ -22,15 +22,15 @@ export function InputBar({ onSend, onInterrupt, loading, usageBrief }) {
   return (
     <>
       <div className="sd-sep" />
-      <div
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          gap: "4px",
-          padding: "6px 8px",
-          flexShrink: 0,
-        }}
-      >
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: "4px",
+            padding: "10px 8px 6px",
+            flexShrink: 0,
+          }}
+        >
         <div style={{ display: "flex", gap: "4px" }}>
           <input
             ref={inputRef}
@@ -64,7 +64,7 @@ export function InputBar({ onSend, onInterrupt, loading, usageBrief }) {
           <div
             style={{
               fontSize: "10px",
-              color: "var(--sd-text-light)",
+              color: "var(--sd-text)",
               textAlign: "right",
             }}
           >

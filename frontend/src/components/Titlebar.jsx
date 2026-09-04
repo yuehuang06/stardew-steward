@@ -1,7 +1,7 @@
 import { getCurrentWindow } from "@tauri-apps/api/window";
 
 export function Titlebar({ status, expanded, onToggle, onRefresh, onTop, onToggleTop, onOpenSessions }) {
-  const btnStyle = { flex: 1, padding: "2px 4px", lineHeight: 1, height: "22px" };
+  const btnStyle = { padding: "2px 4px", lineHeight: 1, height: "22px" };
   return (
     <>
       <div
@@ -48,7 +48,7 @@ export function Titlebar({ status, expanded, onToggle, onRefresh, onTop, onToggl
             <div>星露谷农场管家</div>
           )}
         </div>
-        <div style={{ display: "flex", gap: "3px", paddingRight: "28px" }}>
+        <div style={{ display: "flex", justifyContent: "space-around", paddingRight: "28px" }}>
           <button className="sd-btn" style={btnStyle} onClick={onToggleTop}>
             {onTop ? "置顶" : "置底"}
           </button>

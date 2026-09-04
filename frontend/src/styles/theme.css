@@ -118,7 +118,10 @@ body {
     outline: none;
 }
 .sd-input:focus {
-    border-color: var(--sd-gold);
+    outline: none;
+}
+.sd-input::placeholder {
+    color: var(--sd-text);
 }
 
 /* ---- 滚动条 ---- */
