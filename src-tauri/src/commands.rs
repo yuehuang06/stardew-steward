@@ -91,6 +91,34 @@ pub async fn get_trajectory(state: State<'_, AppState>) -> Result<Vec<String>, S
 }
 
 #[tauri::command]
+pub async fn get_messages(state: State<'_, AppState>) -> Result<Vec<ChatMsg>, String> {
+    let agent = state.agent.lock().await;
+    Ok(agent
+        .chat_messages()
+        .into_iter()
+        .map(|(role, text)| ChatMsg { role, text })
+        .collect())
+}
+
+#[derive(serde::Serialize)]
+pub struct ChatMsg {
+    pub role: String,
+    pub text: String,
+}
+
+#[tauri::command]
+pub async fn toggle_always_on_top(window: tauri::WebviewWindow) -> Result<bool, String> {
+    let cur = window
+        .is_always_on_top()
+        .map_err(|e| e.to_string())?;
+    let next = !cur;
+    window
+        .set_always_on_top(next)
+        .map_err(|e| e.to_string())?;
+    Ok(next)
+}
+
+#[tauri::command]
 pub async fn interrupt(state: State<'_, AppState>) -> Result<(), String> {
     state
         .interrupt_flag

@@ -62,5 +62,26 @@ export function useChat() {
     await invoke("interrupt");
   }, []);
 
-  return { messages, loading, progress, error, send, interrupt };
+  const loadSession = useCallback(async (name) => {
+    setError(null);
+    setProgress([]);
+    setMessages([]);
+    setLoading(true);
+    try {
+      await invoke("load_session", { name });
+      const msgs = await invoke("get_messages");
+      setMessages(msgs);
+    } catch (e) {
+      setError(String(e));
+      setMessages((m) => [
+        ...m,
+        { role: "assistant", text: `加载会话失败: ${e}` },
+      ]);
+    } finally {
+      setLoading(false);
+      setProgress([]);
+    }
+  }, []);
+
+  return { messages, loading, progress, error, send, interrupt, loadSession };
 }

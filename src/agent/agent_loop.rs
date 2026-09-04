@@ -131,6 +131,22 @@ impl Agent {
         Ok((self.history.len(), rounds))
     }
 
+    /// 返回前端展示用的聊天消息（仅 user / assistant，跳过 system / tool）
+    pub fn chat_messages(&self) -> Vec<(String, String)> {
+        self.history
+            .iter()
+            .filter(|m| matches!(m.role, Role::User | Role::Assistant))
+            .map(|m| {
+                let role = match m.role {
+                    Role::User => "user",
+                    Role::Assistant => "assistant",
+                    _ => unreachable!(),
+                };
+                (role.to_string(), m.content.clone())
+            })
+            .collect()
+    }
+
     /// R5: 导出 Agent 完整工作轨迹（含工具调用，非黑盒）
     pub fn trajectory(&self) -> Vec<String> {
         self.history

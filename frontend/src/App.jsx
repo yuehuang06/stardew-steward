@@ -1,17 +1,23 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useChat } from "./hooks/useChat";
 import { useWindowState, useSaveStatus, useUsage } from "./hooks/useWindowState";
+import { useSessions } from "./hooks/useSessions";
+import { useAlwaysOnTop } from "./hooks/useAlwaysOnTop";
 import { Titlebar } from "./components/Titlebar";
 import { ChatMessage } from "./components/ChatMessage";
 import { ProgressIndicator } from "./components/ProgressIndicator";
 import { InputBar } from "./components/InputBar";
+import { SessionPanel } from "./components/SessionPanel";
 
 export default function App() {
-  const { messages, loading, progress, send, interrupt } = useChat();
+  const { messages, loading, progress, send, interrupt, loadSession } = useChat();
   const { status, loading: statusLoading, refresh: refreshStatus } =
     useSaveStatus();
   const { expanded, toggle } = useWindowState();
   const { brief, refresh: refreshUsage } = useUsage();
+  const { sessions, save, load, refresh: refreshSessions } = useSessions();
+  const { onTop, toggle: toggleTop } = useAlwaysOnTop();
+  const [showSessions, setShowSessions] = useState(false);
   const scrollRef = useRef(null);
 
   useEffect(() => {
@@ -31,6 +37,12 @@ export default function App() {
     refreshStatus();
   };
 
+  const handleLoadSession = async (name) => {
+    await loadSession(name);
+    setShowSessions(false);
+    refreshStatus();
+  };
+
   return (
     <div
       className="sd-panel"
@@ -41,6 +53,7 @@ export default function App() {
         width: "100vw",
         borderRadius: "8px",
         overflow: "hidden",
+        position: "relative",
       }}
     >
       <Titlebar
@@ -48,6 +61,12 @@ export default function App() {
         expanded={expanded}
         onToggle={toggle}
         onRefresh={refreshStatus}
+        onTop={onTop}
+        onToggleTop={toggleTop}
+        onOpenSessions={() => {
+          refreshSessions();
+          setShowSessions(true);
+        }}
       />
 
       {/* 聊天区 */}
@@ -69,7 +88,7 @@ export default function App() {
               fontSize: "13px",
             }}
           >
-            🌾 欢迎回来，农场主！
+            {"\u{1F33E}"} 欢迎回来，农场主！
             <br />
             <br />
             问我「今天该干嘛」
@@ -91,6 +110,15 @@ export default function App() {
         loading={loading}
         usageBrief={brief}
       />
+
+      {showSessions && (
+        <SessionPanel
+          sessions={sessions}
+          onSave={save}
+          onLoad={handleLoadSession}
+          onClose={() => setShowSessions(false)}
+        />
+      )}
     </div>
   );
 }

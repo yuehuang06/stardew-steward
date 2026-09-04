@@ -61,8 +61,10 @@ fn main() {
             commands::load_session,
             commands::list_sessions,
             commands::get_trajectory,
+            commands::get_messages,
             commands::interrupt,
             commands::toggle_window_width,
+            commands::toggle_always_on_top,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
