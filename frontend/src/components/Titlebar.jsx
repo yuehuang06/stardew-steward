@@ -33,7 +33,7 @@ export function Titlebar({ status, expanded, onToggle, onSettings, onNew, onTop,
         >
           X
         </button>
-        <div data-tauri-drag-region style={{ cursor: "default", textAlign: "center" }}>
+        <div data-tauri-drag-region style={{ textAlign: "center" }}>
           {status ? (
             <>
               <div>
@@ -47,7 +47,7 @@ export function Titlebar({ status, expanded, onToggle, onSettings, onNew, onTop,
             <div>星露谷农场管家</div>
           )}
         </div>
-        <div style={{ display: "flex", justifyContent: "space-around", paddingRight: "28px" }}>
+        <div data-tauri-drag-region style={{ display: "flex", justifyContent: "space-around", paddingRight: "28px" }}>
           <button className="sd-btn" style={btnStyle} onClick={onNew}>
             新建
           </button>

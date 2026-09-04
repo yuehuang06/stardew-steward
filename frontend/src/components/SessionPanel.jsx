@@ -104,8 +104,14 @@ export function SessionPanel({ sessions, onLoad, onDelete, onClose }) {
                 style={{
                   flexShrink: 0,
                   background: "var(--sd-red)",
-                  padding: "1px 5px",
-                  fontSize: "11px",
+                  width: "20px",
+                  height: "20px",
+                  padding: 0,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  border: "2px solid var(--sd-wood-darker)",
+                  boxShadow: "none",
                 }}
                 onClick={(e) => {
                   e.stopPropagation();
@@ -114,7 +120,7 @@ export function SessionPanel({ sessions, onLoad, onDelete, onClose }) {
                   }
                 }}
               >
-                删
+                X
               </button>
             </div>
           ))
