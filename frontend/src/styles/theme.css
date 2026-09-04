@@ -1,4 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap');
 
 :root {
     --sd-wood-dark:   #3a2010;
@@ -14,8 +15,8 @@
     --sd-gold:        #d4a64a;
     --sd-red:         #c45a3a;
     --sd-blue:        #4a6a8a;
-    --sd-font-pixel:  'Pixelify Sans', 'Microsoft YaHei', '微软雅黑', 'Noto Sans CJK SC', sans-serif;
-    --sd-font-body:   'Microsoft YaHei', '微软雅黑', 'Noto Sans CJK SC', 'WenQuanYi Micro Hei', sans-serif;
+    --sd-font-pixel:  'Pixelify Sans', 'Noto Sans SC', sans-serif;
+    --sd-font-body:   'Noto Sans SC', 'Pixelify Sans', sans-serif;
 }
 
 * {
@@ -23,8 +24,6 @@
     padding: 0;
     box-sizing: border-box;
     font-family: var(--sd-font-body);
-    image-rendering: pixelated;
-    -webkit-font-smoothing: none;
 }
 
 html, body, #root {

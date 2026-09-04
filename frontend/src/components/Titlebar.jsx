@@ -1,20 +1,21 @@
 export function Titlebar({ status, expanded, onToggle, onRefresh, onTop, onToggleTop, onOpenSessions }) {
+  const btnStyle = { fontSize: "12px", padding: "1px 5px", lineHeight: 1, width: "22px", height: "22px", display: "flex", alignItems: "center", justifyContent: "center" };
   return (
     <div
       data-tauri-drag-region
       style={{
         display: "flex",
         alignItems: "center",
-        gap: "6px",
-        padding: "4px 8px",
+        gap: "4px",
+        padding: "3px 6px",
         background: "var(--sd-wood)",
         color: "var(--sd-cream)",
         borderBottom: "2px solid var(--sd-wood-dark)",
-        cursor: "move",
+        cursor: "default",
         flexShrink: 0,
       }}
     >
-      <span style={{ fontSize: "13px", flex: 1 }} data-tauri-drag-region>
+      <span style={{ fontSize: "13px", flex: 1, fontFamily: "var(--sd-font-body)" }} data-tauri-drag-region>
         {status ? (
           <>
             {status.date} · {status.money}g · {status.weather}
@@ -25,7 +26,7 @@ export function Titlebar({ status, expanded, onToggle, onRefresh, onTop, onToggl
       </span>
       <button
         className="sd-btn"
-        style={{ fontSize: "11px", padding: "2px 6px" }}
+        style={btnStyle}
         onClick={onToggleTop}
         title={onTop ? "取消置顶" : "始终置顶"}
       >
@@ -33,7 +34,7 @@ export function Titlebar({ status, expanded, onToggle, onRefresh, onTop, onToggl
       </button>
       <button
         className="sd-btn"
-        style={{ fontSize: "11px", padding: "2px 6px" }}
+        style={btnStyle}
         onClick={onOpenSessions}
         title="会话管理"
       >
@@ -41,7 +42,7 @@ export function Titlebar({ status, expanded, onToggle, onRefresh, onTop, onToggl
       </button>
       <button
         className="sd-btn"
-        style={{ fontSize: "11px", padding: "2px 6px" }}
+        style={btnStyle}
         onClick={onRefresh}
         title="刷新存档"
       >
@@ -49,7 +50,7 @@ export function Titlebar({ status, expanded, onToggle, onRefresh, onTop, onToggl
       </button>
       <button
         className="sd-btn"
-        style={{ fontSize: "11px", padding: "2px 6px" }}
+        style={btnStyle}
         onClick={onToggle}
         title={expanded ? "收起" : "展开"}
       >
