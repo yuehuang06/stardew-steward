@@ -48,7 +48,7 @@ body {
     background: var(--sd-parchment);
     background-clip: padding-box;
     border: 9px solid transparent;
-    border-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABsAAAAbCAYAAACN1PRVAAAAZElEQVR4nGNgwAGeT7P4D8Pl1uIEMbJ6XGbiBMPLMmQNyHh+iAJBjEvvCLEMlyJa4GFsGXLyxRUHpKZkZHOQzR+1bNSyUcvoYNnwLa7oahmucMcVB0On8hwwy3BZPPSbcrS2DACEZQwUoxmpAgAAAABJRU5ErkJggg==") 9;
+    border-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABsAAAAbCAYAAACN1PRVAAAAV0lEQVR4nGOYH6LwH4afT7OA43JrcbIxsjnI5jMMX8twSSCLk4pxmTOMLSMmrEnFuOJ+hFvGQAQYtWzUslHLhpBlw7e4oppldK3Phq9lxIT10GzK0dMyAAORqUzOUZTSAAAAAElFTkSuQmCC") 9;
     padding: 0;
     border-radius: 0;
 }
@@ -58,8 +58,8 @@ body {
     border: 0;
     border-top: 3px solid var(--sd-frame-outer);
     box-shadow:
-        inset 0 3px 0 var(--sd-frame-inner),
-        inset 0 6px 0 var(--sd-frame-mid);
+        inset 0 3px 0 var(--sd-frame-mid),
+        inset 0 6px 0 var(--sd-frame-inner);
     height: 9px;
     background: transparent;
     flex-shrink: 0;
