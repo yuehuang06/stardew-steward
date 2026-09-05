@@ -473,7 +473,7 @@ fn extract_crop_from_terrain(item: &roxmltree::Node) -> Option<CropStatus> {
     })
 }
 
-fn crop_id_to_name(id: i32) -> String {
+pub fn crop_id_to_name(id: i32) -> String {
     match id {
         24 => "防风草".into(),
         188 => "花椰菜".into(),

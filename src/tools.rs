@@ -4,6 +4,7 @@ pub mod solve_schedule;
 pub mod fetch_wiki;
 pub mod crop_advisor;
 pub mod gift_finder;
+pub mod farm_hand;
 
 use std::future::Future;
 use std::pin::Pin;
