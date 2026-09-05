@@ -161,6 +161,44 @@ pub fn build_tools(save_path: &str, kb: Arc<Mutex<KnowledgeBase>>) -> ToolRegist
         },
     );
 
+    let advisor_save = save_path.to_string();
+    let advisor_kb = Arc::clone(&kb);
+    tools.register(
+        "crop_advisor",
+        "分析当前作物的收益（g/天），与当季其他作物对比，推荐更赚钱的种植方案。适合用户问「种什么最赚」「该不该换作物」时调用。",
+        serde_json::json!({
+            "type": "object",
+            "properties": {}
+        }),
+        move |_| {
+            let save = advisor_save.clone();
+            let kb = advisor_kb.clone();
+            async move {
+                let state = parser::parse(Path::new(&save))?;
+                crate::tools::crop_advisor::execute(&state, &kb)
+            }
+        },
+    );
+
+    let gift_save = save_path.to_string();
+    let gift_kb = Arc::clone(&kb);
+    tools.register(
+        "gift_finder",
+        "扫描背包和木箱中的物品，与知识库中 NPC 的喜好交叉匹配，推荐最优送礼方案。适合用户问「该送谁礼物」「谁快生日了」时调用。",
+        serde_json::json!({
+            "type": "object",
+            "properties": {}
+        }),
+        move |_| {
+            let save = gift_save.clone();
+            let kb = gift_kb.clone();
+            async move {
+                let state = parser::parse(Path::new(&save))?;
+                crate::tools::gift_finder::execute(&state, &kb)
+            }
+        },
+    );
+
     tools.register(
         "fetch_wiki",
         "从星露谷中文 wiki 搜索并提取结构化信息（作物、NPC、鱼类、物品等）。当本地知识库 query_knowledge 查不到时使用此工具。支持中文关键词搜索。",
@@ -197,6 +235,8 @@ pub fn build_system_prompt(save_path: &str) -> String {
         - 如果 query_knowledge 查不到，调 fetch_wiki 从星露谷中文 wiki 在线搜索（中英文关键词均可，如 夏季亮片, Abigail, 鲶鱼）。每次查询使用不同的关键词时，最多调用 2 次 fetch_wiki，之后用已有结果回答\n\
         - 如果用户的问题模糊到无法确定查询目标（如「那个花」），先反问用户确认，不要盲目猜测后查询\n\
         - 用户要求安排日程或问「今天该干嘛」时，调 auto_schedule 工具，返回的 JSON 已是最终日程格式，直接原样输出即可（不要修改字段名、不要再调其他工具补充信息）\n\
+        - 用户问「种什么最赚」「该不该换作物」「哪个作物收益高」时，调 crop_advisor 工具，它会用确定性计算对比所有作物的 g/天\n\
+        - 用户问「该送谁礼物」「谁快生日了」「送什么好」时，调 gift_finder 工具，它会扫描背包和木箱匹配 NPC 喜好\n\
         - 用中文回答\n\
         - 所有 NPC 名字一律使用官方中文名，不要用英文名。常见对照：Abigail=阿比盖尔, Sebastian=塞巴斯缇安, Sam=山姆, Penny=潘妮, Leah=莉娅, Maru=玛鲁, Alex=亚历克斯, Haley=海莉, Emily=艾米丽, Shane=谢恩, Caroline=卡罗琳, Demetrius=德米崔斯, Dwarf=矮人, Elliott=艾里欧特, George=乔治, Gus=古斯, Jas=贾斯, Jodi=乔迪, Kent=肯特, Lewis=路易斯, Linus=莱纳斯, Marnie=玛妮, Pam=帕姆, Pierre=皮埃尔, Robin=罗宾, Sandy=桑迪, Vincent=文森特, Willy=威利, Wizard=法师, Krobus=科罗巴斯, Leo=雷欧\n\
         - 存档路径: {}\n\

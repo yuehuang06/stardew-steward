@@ -27,7 +27,6 @@ function getPriorityMeta(priority) {
 export function ScheduleCard({ schedule }) {
   const net = schedule.total_income - schedule.total_cost;
   const tasks = schedule.tasks || [];
-  const lastIdx = tasks.length - 1;
 
   return (
     <div className="sd-timeline sd-slide-in">
@@ -45,7 +44,6 @@ export function ScheduleCard({ schedule }) {
                 <div className={`sd-tl-icon sd-pri-${pri.cls}`}>
                   {meta.icon}
                 </div>
-                {i < lastIdx && <div className="sd-tl-line" />}
               </div>
               <div className="sd-tl-content">
                 <div className="sd-tl-desc">{task.description}</div>

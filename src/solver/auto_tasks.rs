@@ -238,7 +238,7 @@ pub fn generate_tasks(state: &GameState, kb: &Arc<Mutex<KnowledgeBase>>) -> Vec<
 }
 
 /// 粗略计算距生日还有几天
-fn days_to_birthday(birthday: &str, current_season: &str, current_day: u32) -> Option<i32> {
+pub fn days_to_birthday(birthday: &str, current_season: &str, current_day: u32) -> Option<i32> {
     // birthday 格式: "Fall 13" / "Winter 10"
     let parts: Vec<&str> = birthday.split_whitespace().collect();
     if parts.len() != 2 {

@@ -2,6 +2,8 @@ pub mod read_save;
 pub mod query_knowledge;
 pub mod solve_schedule;
 pub mod fetch_wiki;
+pub mod crop_advisor;
+pub mod gift_finder;
 
 use std::future::Future;
 use std::pin::Pin;

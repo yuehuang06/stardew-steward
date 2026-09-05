@@ -191,15 +191,7 @@ body {
     border: 2px solid var(--sd-wood-darker);
     box-shadow: inset 1px 1px 0 rgba(255,255,255,0.2);
     flex-shrink: 0;
-    z-index: 1;
-}
-.sd-tl-line {
-    width: 2px;
-    flex: 1;
-    min-height: 8px;
-    background: var(--sd-wood);
-    margin-top: -1px;
-    margin-bottom: -1px;
+    margin-bottom: 3px;
 }
 .sd-tl-content {
     flex: 1;

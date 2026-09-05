@@ -235,10 +235,72 @@ impl KnowledgeBase {
             .ok()
     }
 
+    /// 精确查询作物完整信息
+    pub fn get_crop_info(&self, name: &str) -> Option<CropInfo> {
+        self.conn
+            .query_row(
+                "SELECT season, growth_days, regrows, sell_price, seed_cost FROM crops WHERE name = ?",
+                [name],
+                |row| {
+                    Ok(CropInfo {
+                        season: row.get(0)?,
+                        growth_days: row.get(1)?,
+                        regrows: row.get::<_, i64>(2)? != 0,
+                        sell_price: row.get(3)?,
+                        seed_cost: row.get(4)?,
+                    })
+                },
+            )
+            .ok()
+    }
+
+    /// 查询某季节所有作物
+    pub fn get_crops_for_season(&self, season: &str) -> Vec<(String, CropInfo)> {
+        let mut stmt = self.conn
+            .prepare("SELECT name, season, growth_days, regrows, sell_price, seed_cost FROM crops WHERE season = ?")
+            .ok();
+        match &mut stmt {
+            Some(stmt) => {
+                let rows = stmt.query_map([season], |row| {
+                    Ok((
+                        row.get::<_, String>(0)?,
+                        CropInfo {
+                            season: row.get(1)?,
+                            growth_days: row.get(2)?,
+                            regrows: row.get::<_, i64>(3)? != 0,
+                            sell_price: row.get(4)?,
+                            seed_cost: row.get(5)?,
+                        },
+                    ))
+                }).ok();
+                rows.map(|r| r.filter_map(|x| x.ok()).collect()).unwrap_or_default()
+            }
+            None => Vec::new(),
+        }
+    }
+
     /// 精确查询 NPC 生日（供求解器用）
     pub fn get_npc_birthday(&self, name: &str) -> Option<String> {
         self.conn
             .query_row("SELECT birthday FROM npcs WHERE name = ?", [name], |row| row.get(0))
             .ok()
+    }
+
+    /// 查询 NPC 最爱物品列表
+    pub fn get_npc_loves(&self, name: &str) -> Vec<String> {
+        self.conn
+            .query_row("SELECT loves FROM npcs WHERE name = ?", [name], |row| row.get::<_, String>(0))
+            .ok()
+            .map(|s| s.split(", ").map(|x| x.trim().to_string()).filter(|x| !x.is_empty()).collect())
+            .unwrap_or_default()
+    }
+
+    /// 查询 NPC 喜欢物品列表
+    pub fn get_npc_likes(&self, name: &str) -> Vec<String> {
+        self.conn
+            .query_row("SELECT likes FROM npcs WHERE name = ?", [name], |row| row.get::<_, String>(0))
+            .ok()
+            .map(|s| s.split(", ").map(|x| x.trim().to_string()).filter(|x| !x.is_empty()).collect())
+            .unwrap_or_default()
     }
 }
