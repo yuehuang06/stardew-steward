@@ -1,6 +1,6 @@
 import { getCurrentWindow } from "@tauri-apps/api/window";
 
-export function Titlebar({ status, expanded, onToggle, onSettings, onNew, onTop, onToggleTop, onOpenSessions }) {
+export function Titlebar({ status, expanded, onToggle, onSettings, onNew, onTop, onToggleTop, onOpenSessions, onRefresh }) {
   const btnStyle = { padding: "2px 4px", lineHeight: 1, height: "22px" };
 
   const handleMouseDown = async (e) => {
@@ -63,6 +63,9 @@ export function Titlebar({ status, expanded, onToggle, onSettings, onNew, onTop,
           </button>
           <button className="sd-btn" style={btnStyle} onClick={onOpenSessions}>
             历史
+          </button>
+          <button className="sd-btn" style={btnStyle} onClick={onRefresh}>
+            刷新
           </button>
           <button className="sd-btn" style={btnStyle} onClick={onSettings}>
             设置

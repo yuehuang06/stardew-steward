@@ -48,6 +48,12 @@ export default function App() {
     refreshStatus();
   };
 
+  const handleRefresh = async () => {
+    await refreshStatus();
+    refreshUsage();
+    refreshSessions();
+  };
+
   return (
     <div
       className="sd-panel"
@@ -75,6 +81,7 @@ export default function App() {
           refreshSessions();
           setShowSessions(true);
         }}
+        onRefresh={handleRefresh}
       />
 
       <div
