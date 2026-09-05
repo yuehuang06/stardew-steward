@@ -91,7 +91,7 @@ export function Titlebar({ status, expanded, onToggle, onSettings, onNew, onTop,
             ⚙
           </button>
           <button className="sd-btn" style={iconBtnStyle} title={expanded ? "收起" : "展开"} onClick={onToggle}>
-            {expanded ? "◀▶" : "▶◀"}
+            {expanded ? "🗗" : "🗖"}
           </button>
         </div>
       </div>
