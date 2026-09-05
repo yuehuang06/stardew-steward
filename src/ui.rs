@@ -40,6 +40,31 @@ pub fn print_usage(summary: &str) {
 
 pub fn print_response(text: &str) {
     println!();
-    println!("{}", text);
+    // Try to parse as schedule JSON and render
+    let json_str = text.trim();
+    let json_str = if json_str.starts_with("```") {
+        if let Some(start) = json_str.find('{') {
+            if let Some(end) = json_str.rfind('}') {
+                &json_str[start..=end]
+            } else {
+                text
+            }
+        } else {
+            text
+        }
+    } else if json_str.starts_with('{') {
+        json_str
+    } else {
+        text
+    };
+
+    match serde_json::from_str::<stardew_steward::solver::schedule::DailySchedule>(json_str) {
+        Ok(schedule) => {
+            println!("{}", stardew_steward::solver::schedule::render(&schedule));
+        }
+        Err(_) => {
+            println!("{}", text);
+        }
+    }
     println!();
 }

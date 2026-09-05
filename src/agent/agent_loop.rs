@@ -185,16 +185,7 @@ impl Agent {
                     Role::Assistant => "assistant",
                     _ => unreachable!(),
                 };
-                let content = if matches!(m.role, Role::Assistant) {
-                    let json_str = extract_json(&m.content).unwrap_or(&m.content);
-                    match serde_json::from_str::<DailySchedule>(json_str) {
-                        Ok(schedule) => crate::solver::schedule::render(&schedule),
-                        Err(_) => m.content.clone(),
-                    }
-                } else {
-                    m.content.clone()
-                };
-                (role.to_string(), content)
+                (role.to_string(), m.content.clone())
             })
             .collect()
     }
@@ -318,10 +309,9 @@ impl Agent {
                         }
                     }
 
-                    // 校验通过，渲染成 Markdown
-                    let rendered = crate::solver::schedule::render(&schedule);
+                    // 校验通过，返回原始 JSON 给前端渲染
                     self.history.push(Message::assistant(text));
-                    return Ok(rendered);
+                    return Ok(text.to_string());
                 }
                 Err(_) => {
                     // 不是 JSON，当普通文本回答返回

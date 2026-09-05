@@ -67,6 +67,13 @@ export function useChat() {
           setSessionUsage({ input: u.input_tokens, output: u.output_tokens, cost: u.cost });
         } catch (_) {}
 
+        // If reply is a schedule JSON, render directly without typing effect
+        const trimmed = reply.trim();
+        if (trimmed.startsWith("{") && trimmed.includes('"summary"') && trimmed.includes('"tasks"')) {
+          setMessages((m) => [...m, { role: "assistant", text: reply, typing: false }]);
+          return;
+        }
+
         const chars = [...reply];
         const totalTicks = Math.min(chars.length, 150);
         const charsPerTick = Math.ceil(chars.length / totalTicks);
