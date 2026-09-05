@@ -1,6 +1,6 @@
 # Stardew Steward 开发进度
 
-> 最后更新: 2026-09-05
+> 最后更新: 2026-09-05 (TODO 1 + 设计文档 + README 完成)
 > 项目路径:
 > - WSL: `/home/gnauh/coding/2026aug/大作业/stardew-steward`
 > - Windows: `C:\Users\gnauh\stardew-steward-win` (克隆副本, 用于 GUI 调试)
@@ -63,10 +63,12 @@
 
 ### 待办 (优先级排序)
 
-1. **[高] 接入 context_length 和 thinking_mode** — 配置项已在设置面板, 但 `call_llm()` 未实际使用这两个字段
+1. ~~**[高] 接入 context_length 和 thinking_mode**~~ — ✅ 已完成 (9/5)
+   - `build_messages()` 按 `context_length` 截断历史消息（保留 system + 最近 N 条，tool_call/tool 响应对不拆散）
+   - `thinking_mode` 在请求体中加 `{"thinking":{"type":"enabled"}}`
 2. **[高] 图标替换** — 当前 `src-tauri/icons/` 是 tauri 自动生成的占位图, 需要像素风图标
 3. **[中] 知识库数据补全** — crops/npcs/fish 数据仍需扩充
-4. **[中] 设计文档更新** — 需与最终实现对齐, 补充 GUI 架构、设置面板等内容
+4. ~~**[中] 设计文档更新**~~ — ✅ 已完成 (9/5), 补充了 GUI 架构、设置面板、Tauri 命令等内容
 5. **[低] 存档监听** — notify crate 监听存档变化, 自动刷新
 6. **[低] 存档 diff** — 睡觉后存档变化, 自动生成战报
 
@@ -162,15 +164,11 @@ stardew-steward/
 
 ## 四、下一步具体 TODO
 
-### TODO 1: 接入 context_length 和 thinking_mode
+### ~~TODO 1: 接入 context_length 和 thinking_mode~~ ✅ 已完成
 
-**问题**: 设置面板已有这两个配置项, 但 `Agent::call_llm()` 未读取它们。
-
-**位置**: `src/agent/agent_loop.rs` 的 `call_llm()` 方法
-
-**做法**:
-- `context_length`: 在构建 LLM 请求时, 取 `history` 最后 N 条消息 (N * 平均长度 ≤ context_length), 截断旧消息
-- `thinking_mode`: 如果为 true, 在请求参数中启用模型的思考模式 (取决于具体 API, 如 GLM 的 `thinking` 参数)
+**已完成**: `agent_loop.rs` 的 `call_llm()` 现已使用这两个字段:
+- `context_length`: `build_messages()` 估算 token (chars/3)，保留 system 消息 + 最近 N 条历史，tool_call/tool 响应对保证不被拆散
+- `thinking_mode`: 为 true 时在请求体加 `{"thinking":{"type":"enabled"}}`
 
 ### TODO 2: 图标替换
 

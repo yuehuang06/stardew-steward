@@ -4,6 +4,8 @@
 
 ## 快速开始
 
+### CLI 模式
+
 ```bash
 # 1. 复制配置
 cp config.toml.example config.toml
@@ -15,6 +17,30 @@ cp .env.example .env
 # 3. 运行
 cargo run
 ```
+
+### GUI 模式 (Tauri 桌面窗口)
+
+```bash
+# 1. 同上配置 config.toml 和 .env
+
+# 2. 安装前端依赖
+cd frontend && npm install && cd ..
+
+# 3. 开发模式运行
+cd src-tauri && cargo tauri dev
+
+# 或直接在项目根目录
+cargo tauri dev
+```
+
+GUI 特性：
+- 像素风窗口（透明/无边框/始终置顶/可伸缩 280↔480px）
+- 日程卡片（JSON → 像素风卡片，优先级中文标签）
+- 打字机效果（逐字显示，闪烁光标）
+- Markdown 渲染（表格/加粗/列表）
+- 会话管理（自动保存/加载/删除/新建）
+- 设置面板（API 配置/用量统计，在线修改并持久化）
+- 进度步骤（实时闪烁，停止按钮打断）
 
 ## 配置说明（config.toml）
 
@@ -83,26 +109,42 @@ cargo run -- --status
 | `/usage` | 查看 Token 用量与成本 |
 | `/quit` | 退出 |
 
+## GUI 用法
+
+启动 GUI 后，窗口以像素风悬浮在游戏窗口旁边（默认 280px 窄模式，可伸缩到 480px）。
+
+| 功能 | 说明 |
+|------|------|
+| 聊天 | 输入框发送消息，Agent 回复支持 Markdown 渲染 + 打字机效果 |
+| 日程卡片 | Agent 输出日程 JSON 时自动渲染为像素风卡片（必做/建议/可选优先级） |
+| 进度步骤 | 实时显示 Agent 当前在做什么（读存档/查知识库/生成日程），最近 2 条 |
+| 停止按钮 | 打断当前 Agent 任务 |
+| 会话面板 | 新建/加载/删除会话，自动保存 |
+| 设置面板 | 在线修改 API endpoint/key/model/context_length/thinking_mode/价格，持久化到 config.toml |
+| 用量统计 | 标题栏实时显示 ¥成本 + token 用量；设置面板显示详细统计 |
+| 窗口置顶 | 标题栏按钮切换，游戏时悬浮在上方 |
+| 窗口伸缩 | 标题栏按钮在 280px（窄）和 480px（宽）间切换 |
+
 ## 项目结构
 
 ```
 stardew-steward/
-├── Cargo.toml
+├── Cargo.toml              # workspace 根 [lib]+[[bin]]+workspace(含 src-tauri)
 ├── config.toml.example
 ├── .env.example
-├── src/
-│   ├── main.rs              # 入口: CLI 参数解析 + 工具注册 + 交互循环
+├── src/                     # 核心库 (CLI + GUI 共用)
+│   ├── lib.rs               # 库入口 pub mod
+│   ├── main.rs              # CLI 入口: 参数解析 + 交互循环
+│   ├── app.rs               # build_tools() + build_system_prompt()
 │   ├── config.rs            # 配置加载 (config.toml + .env)
 │   │
-│   ├── agent.rs             # Agent 模块入口
-│   ├── agent/
-│   │   ├── agent_loop.rs    # Agent Loop: LLM ↔ 工具调用循环 + 打断
+│   ├── agent/               # Agent 核心
+│   │   ├── agent_loop.rs    # Agent Loop: LLM ↔ 工具 + 打断 + context_length 截断 + thinking_mode
 │   │   ├── message.rs       # 消息类型 (system/user/assistant/tool)
 │   │   ├── progress.rs      # ProgressReporter trait (进度回调)
-│   │   └── session.rs       # 会话持久化 (save/load/list)
+│   │   └── session.rs       # 会话持久化 (save/load/list + SessionUsage)
 │   │
-│   ├── parser.rs            # 存档解析器模块入口
-│   ├── parser/
+│   ├── parser/              # 存档解析器
 │   │   ├── save.rs          # roxmltree XML → GameState
 │   │   └── state.rs         # GameState 结构体定义
 │   │
@@ -110,34 +152,50 @@ stardew-steward/
 │   │
 │   ├── tools.rs             # ToolRegistry (异步 handler 注册/执行)
 │   ├── tools/
-│   │   ├── read_save.rs     # 工具: 读存档 → 压缩 JSON
-│   │   ├── query_knowledge.rs # 工具: 查知识库
-│   │   ├── solve_schedule.rs  # 工具: 手动求解日程
-│   │   └── fetch_wiki.rs      # 工具: MediaWiki API 在线搜索
+│   │   ├── read_save.rs      # 工具: 读存档 → 压缩 JSON
+│   │   ├── query_knowledge.rs# 工具: 查知识库
+│   │   ├── solve_schedule.rs # 工具: 手动求解日程
+│   │   ├── auto_schedule.rs  # 工具: 自动生成日程
+│   │   └── fetch_wiki.rs     # 工具: MediaWiki API 在线搜索
 │   │
-│   ├── solver.rs            # 求解器模块入口
-│   ├── solver/
-│   │   ├── task.rs          # Task/Schedule/Priority 定义
-│   │   ├── greedy.rs        # 贪心算法
-│   │   ├── auto_tasks.rs    # 自动任务生成 (吃 GameState + 知识库)
-│   │   └── schedule.rs      # DailySchedule JSON + Markdown 渲染
+│   ├── solver/              # 求解器
+│   │   ├── task.rs           # Task/Schedule/Priority 定义
+│   │   ├── greedy.rs         # 贪心算法
+│   │   ├── auto_tasks.rs     # 自动任务生成 (吃 GameState + 知识库)
+│   │   └── schedule.rs       # DailySchedule JSON + Markdown 渲染
 │   │
 │   ├── validator.rs         # 校验闭环 (资金/时长/优先级规则)
 │   ├── usage.rs             # Token 用量与成本统计
 │   └── ui.rs                 # CLI 界面 + CliReporter
 │
-├── data/
+├── src-tauri/                # Tauri 2 GUI 后端
+│   ├── Cargo.toml            # 依赖 stardew_steward = { path = ".." }
+│   ├── tauri.conf.json       # 窗口配置 (透明/无边框/置顶/可伸缩)
+│   ├── capabilities/         # 权限配置
+│   ├── icons/               # PNG + ICO 图标
+│   └── src/
+│       ├── main.rs          # setup() 初始化 Agent + manage(AppState)
+│       ├── reporter.rs       # TauriReporter (emit 事件: step/thinking/done/error)
+│       └── commands.rs      # 16 个命令 (chat/interrupt/config/sessions/usage/...)
+│
+├── frontend/                # React 18 + Vite 5 前端
+│   ├── package.json
+│   └── src/
+│       ├── main.jsx / App.jsx
+│       ├── styles/theme.css  # CSS 变量 + 9-slice border-image + 像素木框
+│       ├── components/       # Titlebar / ChatMessage / ProgressIndicator / InputBar / ScheduleCard / SessionPanel / SettingsPanel / Markdown
+│       ├── hooks/           # useChat / useWindowState / useSessions / useAlwaysOnTop / useSettings
+│       └── utils/          # parseSchedule
+│
+├── data/                     # 知识库种子数据
 │   ├── crops.json           # 25 种作物知识
 │   ├── npcs.json            # 29 位 NPC 喜好
 │   ├── fish.json            # 26 种鱼类约束
 │   ├── knowledge.db         # SQLite 知识库 (首次启动自动生成)
 │   └── saves/               # 真实存档副本 (开发用, .gitignore)
 │
-├── docs/
-│   ├── 设计文档.md
-│   └── AI开发开销明细.md
 ├── sessions/                # 保存的会话 (.gitignore)
-├── logs/                    # 日志输出目录
+├── docs/                    # 设计文档 + AI 开销明细
 └── README.md
 ```
 

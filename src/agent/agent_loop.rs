@@ -325,17 +325,88 @@ impl Agent {
         Ok("(达到最大步数，自动停止)".into())
     }
 
-    async fn call_llm(&mut self) -> anyhow::Result<LlmResponse> {
-        let messages_json: Vec<serde_json::Value> = self.history.iter()
-            .map(|m| serde_json::to_value(m).unwrap_or_default())
-            .collect();
+    fn build_messages(&self) -> Vec<serde_json::Value> {
+        let ctx = self.config.model.context_length;
+        if ctx == 0 {
+            return self.history.iter()
+                .map(|m| serde_json::to_value(m).unwrap_or_default())
+                .collect();
+        }
 
-        let body = serde_json::json!({
+        let reserved = 2000;
+        let available = ctx.saturating_sub(reserved);
+        let max_chars = available.saturating_mul(3);
+
+        if self.history.is_empty() {
+            return vec![];
+        }
+
+        let total: usize = self.history.iter()
+            .map(|m| m.content.chars().count() + 50)
+            .sum();
+        if total <= max_chars {
+            return self.history.iter()
+                .map(|m| serde_json::to_value(m).unwrap_or_default())
+                .collect();
+        }
+
+        let system_chars = self.history[0].content.chars().count() + 50;
+        let mut budget = max_chars.saturating_sub(system_chars);
+        let mut kept: Vec<usize> = vec![0];
+
+        let mut i = self.history.len();
+        while i > 1 {
+            let msg = &self.history[i - 1];
+            let msg_chars = msg.content.chars().count() + 50;
+
+            if matches!(msg.role, Role::Tool) && i > 2
+                && self.history[i - 2].tool_calls.is_some()
+            {
+                let asst = &self.history[i - 2];
+                let asst_chars = asst.content.chars().count() + 50;
+                let tc_chars = asst.tool_calls.as_ref()
+                    .map(|tc| serde_json::to_string(tc).unwrap_or_default().chars().count())
+                    .unwrap_or(0);
+                let pair = msg_chars + asst_chars + tc_chars;
+
+                if budget >= pair {
+                    budget -= pair;
+                    kept.push(i - 2);
+                    kept.push(i - 1);
+                    i -= 2;
+                } else {
+                    break;
+                }
+            } else {
+                if budget >= msg_chars {
+                    budget -= msg_chars;
+                    kept.push(i - 1);
+                    i -= 1;
+                } else {
+                    break;
+                }
+            }
+        }
+
+        kept.sort();
+        kept.iter()
+            .map(|&idx| serde_json::to_value(&self.history[idx]).unwrap_or_default())
+            .collect()
+    }
+
+    async fn call_llm(&mut self) -> anyhow::Result<LlmResponse> {
+        let messages_json = self.build_messages();
+
+        let mut body = serde_json::json!({
             "model": self.config.model.model,
             "messages": messages_json,
             "tools": self.tools.tool_definitions(),
             "tool_choice": "auto",
         });
+
+        if self.config.model.thinking_mode {
+            body["thinking"] = serde_json::json!({"type": "enabled"});
+        }
 
         let endpoint = if self.config.model.endpoint.ends_with("/chat/completions") {
             self.config.model.endpoint.clone()
