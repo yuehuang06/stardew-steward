@@ -203,13 +203,13 @@ pub fn build_tools(save_path: &str, kb: Arc<Mutex<KnowledgeBase>>) -> ToolRegist
     let farm_kb = Arc::clone(&kb);
     tools.register(
         "farm_hand",
-        "托管农场操作：直接修改存档文件替玩家完成重复劳动。action 可选: water_all(浇水所有作物)、harvest_all(收获所有成熟作物并自动出售)、clear_dead(清理枯死作物)。操作前自动备份存档，修改后校验 XML 合法性，失败自动回滚。注意：必须在游戏关闭时使用，否则修改会被覆盖。",
+        "托管农场操作：直接修改存档文件替玩家完成重复劳动。action 可选: water_all(浇水所有作物)、harvest_all(收获所有成熟作物并自动出售)、clear_dead(清理枯死作物)、rollback_day(回档到前一天，用游戏自带的 _old 存档覆盖当前存档，适合矿井晕倒等失误后反悔)。操作前自动备份存档，修改后校验 XML 合法性，失败自动回滚。注意：必须在游戏关闭时使用，否则修改会被覆盖。",
         serde_json::json!({
             "type": "object",
             "properties": {
                 "action": {
                     "type": "string",
-                    "enum": ["water_all", "harvest_all", "clear_dead"],
+                    "enum": ["water_all", "harvest_all", "clear_dead", "rollback_day"],
                     "description": "要执行的农场操作"
                 }
             },
@@ -264,6 +264,7 @@ pub fn build_system_prompt(save_path: &str) -> String {
         - 用户问「种什么最赚」「该不该换作物」「哪个作物收益高」时，调 crop_advisor 工具，它会用确定性计算对比所有作物的 g/天\n\
         - 用户问「该送谁礼物」「谁快生日了」「送什么好」时，调 gift_finder 工具，它会扫描背包和木箱匹配 NPC 喜好\n\
         - 用户说「帮我浇水」「帮我收获」「清理枯死的」等托管操作时，调 farm_hand 工具，直接修改存档完成操作。提醒用户：必须先关闭游戏再使用，否则修改会被覆盖\n\
+        - 用户说「回档」「回到昨天」「我想反悔」时，调 farm_hand(action=\"rollback_day\")，用游戏自带的 _old 存档回退一天\n\
         - 用中文回答\n\
         - 所有 NPC 名字一律使用官方中文名，不要用英文名。常见对照：Abigail=阿比盖尔, Sebastian=塞巴斯缇安, Sam=山姆, Penny=潘妮, Leah=莉娅, Maru=玛鲁, Alex=亚历克斯, Haley=海莉, Emily=艾米丽, Shane=谢恩, Caroline=卡罗琳, Demetrius=德米崔斯, Dwarf=矮人, Elliott=艾里欧特, George=乔治, Gus=古斯, Jas=贾斯, Jodi=乔迪, Kent=肯特, Lewis=路易斯, Linus=莱纳斯, Marnie=玛妮, Pam=帕姆, Pierre=皮埃尔, Robin=罗宾, Sandy=桑迪, Vincent=文森特, Willy=威利, Wizard=法师, Krobus=科罗巴斯, Leo=雷欧\n\
         - 存档路径: {}\n\

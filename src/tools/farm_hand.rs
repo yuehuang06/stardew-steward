@@ -19,11 +19,16 @@ struct FarmResult {
 /// - water_all: 标记所有作物为已浇水
 /// - harvest_all: 收获成熟作物并自动出售（加钱）
 /// - clear_dead: 清理枯死的作物
+/// - rollback_day: 回档到前一天（用游戏自带的 _old 存档覆盖当前存档）
 pub fn execute(path: &str, action: &str, kb: &Arc<Mutex<KnowledgeBase>>) -> anyhow::Result<String> {
     let save_path = Path::new(path);
 
     if !save_path.exists() {
         return Err(anyhow::anyhow!("存档文件不存在: {}", path));
+    }
+
+    if action == "rollback_day" {
+        return rollback_day(path);
     }
 
     let xml = std::fs::read_to_string(save_path)
@@ -44,7 +49,7 @@ pub fn execute(path: &str, action: &str, kb: &Arc<Mutex<KnowledgeBase>>) -> anyh
         }
         "clear_dead" => clear_dead(&xml, money_before),
         _ => return Err(anyhow::anyhow!(
-            "未知操作: {}。支持: water_all, harvest_all, clear_dead", action
+            "未知操作: {}。支持: water_all, harvest_all, clear_dead, rollback_day", action
         )),
     };
 
@@ -74,6 +79,50 @@ pub fn execute(path: &str, action: &str, kb: &Arc<Mutex<KnowledgeBase>>) -> anyh
         money_before,
         money_after,
         crop_details: details,
+        backup_path,
+    };
+    Ok(serde_json::to_string_pretty(&result)?)
+}
+
+fn rollback_day(path: &str) -> anyhow::Result<String> {
+    let old_path = format!("{}_old", path);
+    if !Path::new(&old_path).exists() {
+        return Err(anyhow::anyhow!("未找到前一天的存档: {}", old_path));
+    }
+
+    let current_xml = std::fs::read_to_string(path)
+        .map_err(|e| anyhow::anyhow!("读取当前存档失败: {}", e))?;
+    let old_xml = std::fs::read_to_string(&old_path)
+        .map_err(|e| anyhow::anyhow!("读取前一天的存档失败: {}", e))?;
+
+    if roxmltree::Document::parse(&old_xml).is_err() {
+        return Err(anyhow::anyhow!("前一天的存档 XML 校验失败，已取消回档"));
+    }
+
+    let backup_path = format!("{}.bak", path);
+    std::fs::write(&backup_path, &current_xml)
+        .map_err(|e| anyhow::anyhow!("备份当前存档失败: {}", e))?;
+
+    let money_before = extract_money(&current_xml);
+    let money_after = extract_money(&old_xml);
+    let day_before = extract_int(&current_xml, "dayOfMonth").unwrap_or(0);
+    let day_after = extract_int(&old_xml, "dayOfMonth").unwrap_or(0);
+
+    std::fs::write(path, &old_xml)
+        .map_err(|e| anyhow::anyhow!(
+            "写入存档失败: {}。当前存档备份在: {}", e, backup_path
+        ))?;
+
+    let result = FarmResult {
+        action: "rollback_day".to_string(),
+        affected: 1,
+        money_before,
+        money_after,
+        crop_details: vec![
+            format!("回档前: 第{}天, 资金{}g", day_before, money_before),
+            format!("回档后: 第{}天, 资金{}g", day_after, money_after),
+            format!("当天存档已备份到: {}", backup_path),
+        ],
         backup_path,
     };
     Ok(serde_json::to_string_pretty(&result)?)
