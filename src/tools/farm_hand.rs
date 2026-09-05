@@ -21,16 +21,27 @@ struct FarmResult {
 /// - clear_dead: 清理枯死的作物
 pub fn execute(path: &str, action: &str, kb: &Arc<Mutex<KnowledgeBase>>) -> anyhow::Result<String> {
     let save_path = Path::new(path);
-    let xml = std::fs::read_to_string(save_path)?;
+
+    if !save_path.exists() {
+        return Err(anyhow::anyhow!("存档文件不存在: {}", path));
+    }
+
+    let xml = std::fs::read_to_string(save_path)
+        .map_err(|e| anyhow::anyhow!("读取存档失败: {}（游戏是否仍在运行？请先关闭游戏）", e))?;
 
     let backup_path = format!("{}.bak", path);
-    std::fs::write(&backup_path, &xml)?;
+    std::fs::write(&backup_path, &xml)
+        .map_err(|e| anyhow::anyhow!("备份存档失败: {}", e))?;
 
     let money_before = extract_money(&xml);
 
     let (modified, affected, details, money_after) = match action {
         "water_all" => water_all(&xml, money_before),
-        "harvest_all" => harvest_all(&xml, money_before, kb),
+        "harvest_all" => {
+            let kb = kb.lock()
+                .map_err(|e| anyhow::anyhow!("知识库锁异常: {}", e))?;
+            harvest_all(&xml, money_before, &kb)
+        }
         "clear_dead" => clear_dead(&xml, money_before),
         _ => return Err(anyhow::anyhow!(
             "未知操作: {}。支持: water_all, harvest_all, clear_dead", action
@@ -44,11 +55,18 @@ pub fn execute(path: &str, action: &str, kb: &Arc<Mutex<KnowledgeBase>>) -> anyh
     };
 
     if roxmltree::Document::parse(&final_xml).is_err() {
-        std::fs::write(save_path, &xml)?;
-        return Err(anyhow::anyhow!("修改后 XML 校验失败，已自动回滚"));
+        if std::fs::write(save_path, &xml).is_err() {
+            return Err(anyhow::anyhow!(
+                "修改后 XML 校验失败，且自动回滚也失败了！请手动从备份恢复: {}", backup_path
+            ));
+        }
+        return Err(anyhow::anyhow!("修改后 XML 校验失败，已自动回滚到原始存档"));
     }
 
-    std::fs::write(save_path, &final_xml)?;
+    std::fs::write(save_path, &final_xml)
+        .map_err(|e| anyhow::anyhow!(
+            "写入存档失败: {}。原始存档备份在: {}", e, backup_path
+        ))?;
 
     let result = FarmResult {
         action: action.to_string(),
@@ -155,23 +173,21 @@ fn replace_state_watered(block: &str) -> String {
 fn harvest_all(
     xml: &str,
     money: i32,
-    kb: &Arc<Mutex<KnowledgeBase>>,
+    kb: &KnowledgeBase,
 ) -> (String, u32, Vec<String>, i32) {
-    let kb = kb.lock().unwrap();
     let mut segments = split_blocks(xml);
     let mut total_income = 0i32;
     let mut total_count = 0u32;
     let mut by_name: std::collections::HashMap<String, (u32, i32)> = std::collections::HashMap::new();
 
-    for i in 1..segments.len() {
-        if !segments[i].starts_with(HOE_DIRT_OPEN) {
+    for seg in segments.iter_mut() {
+        if !seg.starts_with(HOE_DIRT_OPEN) {
             continue;
         }
-        let block = &segments[i];
-        if !block.contains("<fullGrown>true</fullGrown>") || block.contains("<dead>true</dead>") {
+        if !seg.contains("<fullGrown>true</fullGrown>") || seg.contains("<dead>true</dead>") {
             continue;
         }
-        let Some(crop_id) = extract_int(block, "indexOfHarvest") else { continue };
+        let Some(crop_id) = extract_int(seg, "indexOfHarvest") else { continue };
         let name = crop_id_to_name(crop_id);
         let price = kb.get_crop_price(&name).unwrap_or(0);
         let regrows = kb.get_crop_info(&name).map(|c| c.regrows).unwrap_or(false);
@@ -181,13 +197,18 @@ fn harvest_all(
         let e = by_name.entry(name.clone()).or_insert((0, price));
         e.0 += 1;
 
+        let block = seg.clone();
         let mut modified = block.clone();
         if regrows {
-            modified = modified
-                .replace("<fullGrown>true</fullGrown>", "<fullGrown>false</fullGrown>")
-                .replace("<dayOfCurrentPhase>0</dayOfCurrentPhase>", "<dayOfCurrentPhase>0</dayOfCurrentPhase>");
-            if let Some(cur) = extract_int(block, "currentPhase") {
-                let phases = extract_phase_days(block);
+            modified = modified.replace("<fullGrown>true</fullGrown>", "<fullGrown>false</fullGrown>");
+            if let Some(dop) = extract_int(&block, "dayOfCurrentPhase") {
+                modified = modified.replace(
+                    &format!("<dayOfCurrentPhase>{}</dayOfCurrentPhase>", dop),
+                    "<dayOfCurrentPhase>0</dayOfCurrentPhase>",
+                );
+            }
+            if let Some(cur) = extract_int(&block, "currentPhase") {
+                let phases = extract_phase_days(&block);
                 let reset = phases.len().saturating_sub(2) as i32;
                 if cur > reset && cur == phases.len() as i32 - 1 {
                     modified = modified.replace(
@@ -196,14 +217,13 @@ fn harvest_all(
                     );
                 }
             }
-        } else if let Some(cs) = block.find("<crop>") {
-            if let Some(ce) = block.find("</crop>").map(|p| p + "</crop>".len()) {
-                if cs < ce {
-                    modified = format!("{}{}", &block[..cs], &block[ce..]);
-                }
-            }
+        } else if let Some((cs, ce)) = block.find("<crop>")
+            .and_then(|s| block.find("</crop>").map(|e| (s, e + "</crop>".len())))
+            .filter(|(s, e)| s < e)
+        {
+            modified = format!("{}{}", &block[..cs], &block[ce..]);
         }
-        segments[i] = modified;
+        *seg = modified;
     }
 
     let mut details: Vec<String> = by_name.iter()
@@ -222,21 +242,16 @@ fn clear_dead(xml: &str, money: i32) -> (String, u32, Vec<String>, i32) {
     let mut segments = split_blocks(xml);
     let mut count = 0u32;
 
-    for i in 1..segments.len() {
-        if !segments[i].starts_with(HOE_DIRT_OPEN) {
+    for seg in segments.iter_mut() {
+        if !seg.starts_with(HOE_DIRT_OPEN) || !seg.contains("<dead>true</dead>") {
             continue;
         }
-        let block = &segments[i];
-        if !block.contains("<dead>true</dead>") {
-            continue;
-        }
-        if let Some(cs) = block.find("<crop>") {
-            if let Some(ce) = block.find("</crop>").map(|p| p + "</crop>".len()) {
-                if cs < ce {
-                    segments[i] = format!("{}{}", &block[..cs], &block[ce..]);
-                    count += 1;
-                }
-            }
+        if let Some((cs, ce)) = seg.find("<crop>")
+            .and_then(|s| seg.find("</crop>").map(|e| (s, e + "</crop>".len())))
+            .filter(|(s, e)| s < e)
+        {
+            *seg = format!("{}{}", &seg[..cs], &seg[ce..]);
+            count += 1;
         }
     }
     (segments.join(""), count, vec![format!("已清理 {} 株枯死作物", count)], money)
