@@ -185,7 +185,16 @@ impl Agent {
                     Role::Assistant => "assistant",
                     _ => unreachable!(),
                 };
-                (role.to_string(), m.content.clone())
+                let content = if matches!(m.role, Role::Assistant) {
+                    let json_str = extract_json(&m.content).unwrap_or(&m.content);
+                    match serde_json::from_str::<DailySchedule>(json_str) {
+                        Ok(schedule) => crate::solver::schedule::render(&schedule),
+                        Err(_) => m.content.clone(),
+                    }
+                } else {
+                    m.content.clone()
+                };
+                (role.to_string(), content)
             })
             .collect()
     }

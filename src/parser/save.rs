@@ -76,6 +76,8 @@ fn parse_xml(xml: &str) -> anyhow::Result<GameState> {
 
     let chests = parse_chests(&root);
 
+    let quests = parse_quests(&player);
+
     Ok(GameState {
         money,
         date: GameDate { year, season, day },
@@ -86,6 +88,7 @@ fn parse_xml(xml: &str) -> anyhow::Result<GameState> {
         friendships,
         inventory,
         chests,
+        quests,
     })
 }
 
@@ -134,6 +137,92 @@ fn parse_friendships(player: &roxmltree::Node) -> Vec<Friendship> {
     }
 
     result.sort_by(|a, b| b.points.cmp(&a.points));
+    result
+}
+
+fn parse_quests(player: &roxmltree::Node) -> Vec<Quest> {
+    let mut result = Vec::new();
+
+    let quest_log = match player.children().find(|n| n.has_tag_name("questLog")) {
+        Some(q) => q,
+        None => return result,
+    };
+
+    for quest in quest_log.children().filter(|n| n.has_tag_name("Quest")) {
+        let get_text = |tag: &str| -> String {
+            quest.children()
+                .find(|n| n.has_tag_name(tag))
+                .and_then(|n| n.text())
+                .unwrap_or("")
+                .trim()
+                .to_string()
+        };
+        let get_int = |tag: &str| -> i32 {
+            quest.children()
+                .find(|n| n.has_tag_name(tag))
+                .and_then(|n| n.text())
+                .and_then(|t| t.trim().parse::<i32>().ok())
+                .unwrap_or(0)
+        };
+        let get_bool = |tag: &str| -> bool {
+            quest.children()
+                .find(|n| n.has_tag_name(tag))
+                .and_then(|n| n.text())
+                .map(|t| t.trim() == "true")
+                .unwrap_or(false)
+        };
+
+        let completed = get_bool("completed");
+        if completed {
+            continue;
+        }
+
+        let xsi_type = quest.attributes()
+            .find(|a| a.name() == "type")
+            .map(|a| a.value())
+            .unwrap_or("");
+
+        let quest_type = match xsi_type {
+            "ItemDeliveryQuest" => "delivery",
+            "LostItemQuest" => "lost_item",
+            "CollectObjective" | "ResourceCollectionQuest" => "collect",
+            _ => if get_int("dailyQuest") == 1 { "daily" } else { "story" },
+        }.to_string();
+
+        let title = get_text("_questTitle");
+        let description = get_text("_questDescription");
+        let objective = get_text("_currentObjective");
+        if title.is_empty() && objective.is_empty() {
+            continue;
+        }
+
+        let target = {
+            let t = get_text("target");
+            if t.is_empty() { None } else { Some(t) }
+        };
+        let item = {
+            let i = get_text("item");
+            if i.is_empty() { None } else { Some(i) }
+        };
+        let number = {
+            let n = get_int("number");
+            if n > 0 { Some(n) } else { None }
+        };
+
+        result.push(Quest {
+            title,
+            description,
+            objective,
+            completed: false,
+            money_reward: get_int("moneyReward"),
+            days_left: get_int("daysLeft"),
+            quest_type,
+            target,
+            item,
+            number,
+        });
+    }
+
     result
 }
 

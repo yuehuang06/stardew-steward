@@ -13,6 +13,8 @@ struct CompactState {
     top_friendships: Vec<String>,
     inventory: Vec<String>,
     chests: Vec<String>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    quests: Vec<String>,
 }
 
 #[derive(Serialize)]
@@ -60,6 +62,14 @@ pub fn execute(path: &str) -> anyhow::Result<String> {
                 .map(|i| format!("{}×{}", i.name, i.count))
                 .collect();
             format!("{}({:.0},{:.0}): {}", c.location, c.x, c.y, items.join(", "))
+        })
+        .collect();
+
+    let quest_list: Vec<String> = state.quests.iter()
+        .map(|q| {
+            let reward = if q.money_reward > 0 { format!("（奖励{}g）", q.money_reward) } else { String::new() };
+            let target = q.target.as_ref().map(|t| format!(" → {}", t)).unwrap_or_default();
+            format!("[{}] {}{}: {}{}", q.quest_type, q.title, target, q.objective, reward)
         })
         .collect();
 
@@ -112,6 +122,7 @@ pub fn execute(path: &str) -> anyhow::Result<String> {
             .map(|i| format!("{}×{}", i.name, i.count))
             .collect(),
         chests: chest_summary,
+        quests: quest_list,
     };
 
     Ok(serde_json::to_string_pretty(&compact)?)

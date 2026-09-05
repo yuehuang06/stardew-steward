@@ -13,6 +13,9 @@ pub struct GameState {
     pub friendships: Vec<Friendship>,
     pub inventory: Vec<InventoryItem>,
     pub chests: Vec<Chest>,
+    /// 当前进行中的任务
+    #[serde(default)]
+    pub quests: Vec<Quest>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -70,6 +73,22 @@ pub struct Chest {
     pub items: Vec<InventoryItem>,
 }
 
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct Quest {
+    pub title: String,
+    pub description: String,
+    pub objective: String,
+    pub completed: bool,
+    pub money_reward: i32,
+    pub days_left: i32,
+    pub quest_type: String,
+    /// 物品交付任务的目标 NPC
+    pub target: Option<String>,
+    /// 需要的物品 ID (如 "(O)303")
+    pub item: Option<String>,
+    pub number: Option<i32>,
+}
+
 impl GameState {
     pub fn mock() -> anyhow::Result<Self> {
         Ok(Self {
@@ -98,6 +117,20 @@ impl GameState {
                         InventoryItem { name: "Copper Bar".into(), count: 6 },
                         InventoryItem { name: "Wood".into(), count: 60 },
                     ],
+                },
+            ],
+            quests: vec![
+                Quest {
+                    title: "矿场深处".into(),
+                    description: "深入矿场探索".into(),
+                    objective: "在矿场中达到 40 层".into(),
+                    completed: false,
+                    money_reward: 0,
+                    days_left: 0,
+                    quest_type: "story".into(),
+                    target: None,
+                    item: None,
+                    number: None,
                 },
             ],
         })
