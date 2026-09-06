@@ -22,13 +22,9 @@ pub struct SessionUsage {
 }
 
 pub fn sessions_dir() -> String {
-    // 相对路径解析到项目根目录，保证 cargo tauri dev（CWD=src-tauri/）也正确
-    let dir = "sessions";
-    if std::path::Path::new(dir).is_absolute() {
-        dir.to_string()
-    } else {
-        format!("{}/{}", env!("CARGO_MANIFEST_DIR"), dir)
-    }
+    let dir = crate::config::app_data_dir().join("sessions");
+    std::fs::create_dir_all(&dir).ok();
+    dir.to_string_lossy().into_owned()
 }
 
 pub fn sanitize_name(name: &str) -> String {
