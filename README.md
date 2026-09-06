@@ -73,7 +73,7 @@ cd src-tauri && tauri build
 
 **两种配置方式：**
 1. **GUI 设置面板**（推荐普通用户）— 标题栏 ⚙ → 填 endpoint/key/model/context_length/thinking_mode/价格/Token预算 → 保存
-2. **手动编辑 config.toml**（高级用户）— 在 OpenAI / 本地模型 / 清华 AI 平台之间切换 endpoint 和 model
+2. **手动编辑 config.toml**（高级用户）— 在 OpenAI / 本地模型 / 其他平台之间切换 endpoint 和 model
 
 ## 配置说明（config.toml）
 
