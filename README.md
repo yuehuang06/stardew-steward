@@ -41,9 +41,16 @@ cd src-tauri && tauri dev
 
 > **关于 `tauri dev` vs `cargo tauri dev`：** 两者完全等价。`tauri` 是通过 `npm install -g @tauri-apps/cli` 安装的，`cargo tauri` 是通过 `cargo install tauri-cli` 安装的。装了哪个就用哪个。
 
-### 方式二：下载安装包（仅 Windows）
+### 方式二：下载预编译包（仅 Windows，免编译）
 
-安装 MSI/NSIS 包后直接打开应用，无需任何开发环境。首次运行自动生成配置文件，在设置面板填入 API key 即可。
+仓库 `dist/` 目录下提供预编译产物：
+
+| 文件 | 大小 | 说明 |
+|------|------|------|
+| `dist/stardew-steward-gui.exe` | 18MB | 独立 exe，双击即用 |
+| `dist/Stardew Steward_0.1.0_x64-setup.exe` | 4MB | NSIS 安装包，安装后开始菜单有快捷方式 |
+
+下载后直接运行即可，无需 Rust/Node.js 环境。首次打开自动生成配置文件，在设置面板填入 API key 即可。
 
 ### 打包
 

@@ -29,3 +29,6 @@ frontend/dist/
 # Tauri
 src-tauri/target/
 src-tauri/gen/
+
+# 允许 dist/ 下的预编译产物
+!dist/
