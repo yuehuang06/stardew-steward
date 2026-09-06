@@ -54,6 +54,8 @@ impl Agent {
     pub fn new_session(&mut self) {
         self.history = vec![Message::system(&self.system_prompt)];
         self.session_title = None;
+        // 重置 per-session 用量统计
+        self.usage = UsageTracker::from_config(&self.config);
     }
 
     /// R4: 注入打断标记（由 main 的 Ctrl-C 信号任务置位）
@@ -224,7 +226,12 @@ impl Agent {
 
     /// Agent 主循环
     pub async fn run(&mut self, user_message: &str) -> anyhow::Result<String> {
-        self.history.push(Message::user(user_message));
+        // 每次对话前提醒 LLM 重新读取最新存档（避免使用上下文中的旧数据）
+        let with_reminder = format!(
+            "[系统提醒: 玩家可能已推进游戏进度，存档状态可能已变化。请重新调用 read_save 获取最新存档。]\n{}",
+            user_message
+        );
+        self.history.push(Message::user(&with_reminder));
 
         for _step in 0..self.config.agent.max_steps {
             if self.interrupted() {

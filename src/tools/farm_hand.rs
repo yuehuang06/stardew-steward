@@ -27,6 +27,13 @@ pub fn execute(path: &str, action: &str, kb: &Arc<Mutex<KnowledgeBase>>) -> anyh
         return Err(anyhow::anyhow!("存档文件不存在: {}", path));
     }
 
+    // 检测星露谷物语是否正在运行
+    if is_game_running() {
+        return Err(anyhow::anyhow!(
+            "检测到星露谷物语正在运行！请先关闭游戏再执行农场操作，否则修改会被游戏覆盖。关闭后重试。"
+        ));
+    }
+
     if action == "rollback_day" {
         return rollback_day(path);
     }
@@ -130,6 +137,30 @@ fn rollback_day(path: &str) -> anyhow::Result<String> {
 
 const HOE_DIRT_OPEN: &str = "<TerrainFeature xsi:type=\"HoeDirt\">";
 const HOE_DIRT_CLOSE: &str = "</TerrainFeature>";
+
+fn is_game_running() -> bool {
+    #[cfg(target_os = "windows")]
+    {
+        if let Ok(output) = std::process::Command::new("tasklist")
+            .args(["/FI", "IMAGENAME eq StardewValley.exe", "/FO", "CSV", "/NH"])
+            .output()
+        {
+            let stdout = String::from_utf8_lossy(&output.stdout);
+            return stdout.contains("StardewValley.exe");
+        }
+        false
+    }
+    #[cfg(not(target_os = "windows"))]
+    {
+        if let Ok(output) = std::process::Command::new("pgrep")
+            .args(["-i", "stardew"])
+            .output()
+        {
+            return !output.stdout.is_empty();
+        }
+        false
+    }
+}
 
 fn extract_money(xml: &str) -> i32 {
     let m = "<money>";

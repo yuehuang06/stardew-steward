@@ -8,6 +8,8 @@ export function useChat() {
   const [progress, setProgress] = useState([]);
   const [error, setError] = useState(null);
   const [sessionUsage, setSessionUsage] = useState({ input: 0, output: 0, cost: 0 });
+  const [stepCount, setStepCount] = useState(0);
+  const [maxSteps, setMaxSteps] = useState(10);
   const unlistenRef = useRef([]);
   const typingTimerRef = useRef(null);
 
@@ -16,7 +18,10 @@ export function useChat() {
     const setup = async () => {
       const handlers = [
         await listen("agent-step", (e) => {
-          if (!cancelled) setProgress((p) => [...p, { type: "step", text: e.payload }].slice(-2));
+          if (!cancelled) {
+            setProgress((p) => [...p, { type: "step", text: e.payload }].slice(-2));
+            setStepCount((c) => c + 1);
+          }
         }),
         await listen("agent-thinking", (e) => {
           if (!cancelled) setProgress((p) => [...p, { type: "thinking", text: e.payload }].slice(-2));
@@ -50,6 +55,7 @@ export function useChat() {
       if (!text.trim() || loading) return;
       setError(null);
       setProgress([]);
+      setStepCount(0);
       if (typingTimerRef.current) {
         clearInterval(typingTimerRef.current);
         typingTimerRef.current = null;
@@ -164,5 +170,5 @@ export function useChat() {
     }
   }, []);
 
-  return { messages, loading, progress, error, send, interrupt, loadSession, newSession, sessionUsage };
+  return { messages, loading, progress, error, send, interrupt, loadSession, newSession, sessionUsage, stepCount, maxSteps };
 }

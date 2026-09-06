@@ -149,6 +149,24 @@ body {
     animation: slide-in 0.2s ease-out;
 }
 
+/* ---- 像素进度条 ---- */
+.sd-progress-bar {
+    display: flex;
+    gap: 1px;
+    height: 8px;
+}
+.sd-progress-cell {
+    flex: 1;
+    background: var(--sd-parchment-d);
+    border: 1px solid var(--sd-wood-darker);
+    min-width: 4px;
+}
+.sd-progress-cell.filled {
+    background: var(--sd-green);
+    border-color: var(--sd-green-d);
+    box-shadow: inset 1px 1px 0 #7a9a5a;
+}
+
 /* ---- 日程时间线 ---- */
 .sd-timeline {
     background: var(--sd-cream);

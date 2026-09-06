@@ -12,7 +12,7 @@ import { SessionPanel } from "./components/SessionPanel";
 import { SettingsPanel } from "./components/SettingsPanel";
 
 export default function App() {
-  const { messages, loading, progress, send, interrupt, loadSession, newSession, sessionUsage } = useChat();
+  const { messages, loading, progress, send, interrupt, loadSession, newSession, sessionUsage, stepCount, maxSteps } = useChat();
   const { status, loading: statusLoading, refresh: refreshStatus } =
     useSaveStatus();
   const { expanded, toggle } = useWindowState();
@@ -114,7 +114,7 @@ export default function App() {
           <ChatMessage key={i} msg={msg} />
         ))}
 
-        {loading && <ProgressIndicator progress={progress} />}
+        {loading && <ProgressIndicator progress={progress} maxSteps={maxSteps} currentStep={stepCount} />}
       </div>
 
       <InputBar
