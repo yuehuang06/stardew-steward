@@ -7,7 +7,10 @@ config.toml
 .env
 
 # 真实存档（不提交到 Git）
-data/saves/
+data/saves/*
+# 但保留内置 Ferris 存档
+!data/saves/Rust
+!data/saves/SaveGameInfo
 
 # 运行时生成的数据库
 data/*.db
