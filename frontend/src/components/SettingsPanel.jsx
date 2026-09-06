@@ -25,12 +25,12 @@ export function SettingsPanel({ config, usage, saving, onUpdate, onClose }) {
   const handleSave = () => {
     onUpdate({
       endpoint: form.endpoint,
-      api_key: form.api_key,
+      apiKey: form.api_key,
       model: form.model,
-      context_length: Number(form.context_length),
-      thinking_mode: form.thinking_mode,
-      price_input: Number(form.price_input),
-      price_output: Number(form.price_output),
+      contextLength: Number(form.context_length),
+      thinkingMode: form.thinking_mode,
+      priceInput: Number(form.price_input),
+      priceOutput: Number(form.price_output),
     });
   };
 

@@ -224,7 +224,8 @@ pub async fn get_config(state: State<'_, AppState>) -> Result<serde_json::Value,
 pub async fn update_config(
     state: State<'_, AppState>,
     endpoint: String,
-    api_key: String,
+    #[allow(non_snake_case)]
+    apiKey: String,
     model: String,
     context_length: usize,
     thinking_mode: bool,
@@ -234,9 +235,9 @@ pub async fn update_config(
     let mut agent = state.agent.lock().await;
     let mut new_model = agent.config().model.clone();
     new_model.endpoint = endpoint;
-    let key_changed = !api_key.is_empty() && !api_key.contains("...");
+    let key_changed = !apiKey.is_empty() && !apiKey.contains("...");
     if key_changed {
-        new_model.api_key = api_key;
+        new_model.api_key = apiKey;
     }
     new_model.model = model;
     new_model.context_length = context_length;
