@@ -2,27 +2,38 @@
 
 星露谷物语的专属 AI Agent，持续读取本地存档，结合游戏知识库给出"够用就好"的当日日程建议。
 
+## 平台支持
+
+| 模式 | Windows | macOS | Linux |
+|------|---------|-------|-------|
+| CLI（终端交互） | ✅ | ✅ | ✅ |
+| GUI（Tauri 桌面窗口） | ✅ | ⚠️ 需自行编译 | ⚠️ 需自行编译 |
+
+- **CLI** 纯 Rust，跨平台，`cargo run` 即可运行
+- **GUI** 基于 Tauri 2，已提供 Windows 预编译 exe；macOS/Linux 需从源码自行 `tauri build`
+
 ## 快速开始
 
 ### 方式一：下载源码编译运行
 
-需要安装 [Rust](https://rustup.rs/) 和 [Node.js](https://nodejs.org/)（≥18）。
+需要安装 [Rust](https://rustup.rs/)。
 
+**CLI（所有平台）：**
 ```bash
-# 1. 克隆仓库
 git clone <仓库地址>
 cd stardew-steward
-
-# 2. 安装前端依赖
-cd frontend && npm install && cd ..
-
-# 3a. 运行 GUI（开发模式）—— 二选一
-cd src-tauri && tauri dev
-# 或安装了 cargo-tauri 的话也可以：
-# cd src-tauri && cargo tauri dev
-
-# 3b. 运行 CLI —— 二选一
 cargo run
+```
+
+**GUI（需额外安装 Node.js ≥18 + Tauri CLI）：**
+```bash
+# 安装 Tauri CLI（二选一）
+npm install -g @tauri-apps/cli   # 或
+cargo install tauri-cli
+
+# 安装前端依赖 + 运行
+cd frontend && npm install && cd ..
+cd src-tauri && tauri dev
 ```
 
 首次运行时自动在应用数据目录生成 `config.toml`（API key 为空）。
@@ -30,14 +41,14 @@ cargo run
 
 > **关于 `tauri dev` vs `cargo tauri dev`：** 两者完全等价。`tauri` 是通过 `npm install -g @tauri-apps/cli` 安装的，`cargo tauri` 是通过 `cargo install tauri-cli` 安装的。装了哪个就用哪个。
 
-### 方式二：下载安装包
+### 方式二：下载安装包（仅 Windows）
 
 安装 MSI/NSIS 包后直接打开应用，无需任何开发环境。首次运行自动生成配置文件，在设置面板填入 API key 即可。
 
 ### 打包
 
 ```bash
-# 需要安装 tauri CLI（npm 或 cargo 均可）
+# Windows/macOS/Linux 均可，需 Tauri CLI
 cd src-tauri && tauri build
 ```
 
