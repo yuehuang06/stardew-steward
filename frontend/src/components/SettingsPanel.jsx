@@ -14,6 +14,7 @@ export function SettingsPanel({ config, usage, saving, onUpdate, onClose }) {
         thinking_mode: m.thinking_mode || false,
         price_input: m.price_input || 0,
         price_output: m.price_output || 0,
+        token_budget: (config.agent && config.agent.token_budget) || 200000,
       });
     }
   }, [config]);
@@ -31,6 +32,7 @@ export function SettingsPanel({ config, usage, saving, onUpdate, onClose }) {
       thinkingMode: form.thinking_mode,
       priceInput: Number(form.price_input),
       priceOutput: Number(form.price_output),
+      tokenBudget: Number(form.token_budget),
     });
   };
 
@@ -158,6 +160,16 @@ export function SettingsPanel({ config, usage, saving, onUpdate, onClose }) {
               />
             </div>
           </div>
+
+          <label style={labelStyle}>Token 预算（每会话）</label>
+          <input
+            className="sd-input"
+            style={inputStyle}
+            type="number"
+            step="10000"
+            value={form.token_budget}
+            onChange={(e) => set("token_budget", e.target.value)}
+          />
 
           <button
             className="sd-btn sd-btn-green"

@@ -110,6 +110,11 @@ impl Agent {
         &self.config
     }
 
+    pub fn set_token_budget(&mut self, budget: u64) {
+        self.config.agent.token_budget = budget;
+        self.usage.set_budget(budget);
+    }
+
     pub fn update_model_config(&mut self, model: crate::config::ModelConfig) {
         self.config.model = model;
         self.usage = UsageTracker::from_config(&self.config);
@@ -161,6 +166,9 @@ impl Agent {
         let rounds = s.interaction_rounds;
         let usage = s.usage.clone();
         self.history = s.messages;
+        // 重置 per-session 用量统计，用加载的会话用量初始化
+        self.usage = UsageTracker::from_config(&self.config);
+        self.usage.restore(usage.input_tokens, usage.output_tokens, usage.cost);
         Ok((self.history.len(), rounds, usage))
     }
 

@@ -42,6 +42,16 @@ impl UsageTracker {
             + (output as f64 / 1000.0) * self.price_output;
     }
 
+    pub fn restore(&mut self, input: u64, output: u64, cost: f64) {
+        self.total_input_tokens = input;
+        self.total_output_tokens = output;
+        self.total_cost = cost;
+    }
+
+    pub fn set_budget(&mut self, budget: u64) {
+        self.budget = budget;
+    }
+
     pub fn over_budget(&self) -> bool {
         self.total_input_tokens + self.total_output_tokens >= self.budget
     }

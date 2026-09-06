@@ -234,6 +234,8 @@ pub async fn update_config(
     thinking_mode: bool,
     price_input: f64,
     price_output: f64,
+    #[allow(non_snake_case)]
+    tokenBudget: u64,
 ) -> Result<(), String> {
     let mut agent = state.agent.lock().await;
     let mut new_model = agent.config().model.clone();
@@ -250,8 +252,12 @@ pub async fn update_config(
 
     agent.update_model_config(new_model.clone());
 
+    // 更新 token 预算
+    agent.set_token_budget(tokenBudget);
+
     let mut cfg = agent.config().clone();
     cfg.model = new_model;
+    cfg.agent.token_budget = tokenBudget;
     config::save(&cfg).map_err(|e| {
         format!("保存配置失败: {} (app_data_dir: {:?})", e, config::app_data_dir())
     })?;
