@@ -22,6 +22,9 @@ export function useSettings() {
     try {
       await invoke("update_config", vals);
       await refresh();
+    } catch (e) {
+      console.error("save config failed:", e);
+      alert("保存配置失败: " + e);
     } finally {
       setSaving(false);
     }

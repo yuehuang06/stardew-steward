@@ -234,8 +234,8 @@ pub async fn update_config(
     let mut agent = state.agent.lock().await;
     let mut new_model = agent.config().model.clone();
     new_model.endpoint = endpoint;
-    // Only update api_key if user provided a new one (not masked)
-    if !api_key.is_empty() && !api_key.contains("...") {
+    let key_changed = !api_key.is_empty() && !api_key.contains("...");
+    if key_changed {
         new_model.api_key = api_key;
     }
     new_model.model = model;
@@ -246,10 +246,11 @@ pub async fn update_config(
 
     agent.update_model_config(new_model.clone());
 
-    // Persist to config.toml
     let mut cfg = agent.config().clone();
     cfg.model = new_model;
-    config::save(&cfg).map_err(|e| e.to_string())?;
+    config::save(&cfg).map_err(|e| {
+        format!("保存配置失败: {} (app_data_dir: {:?})", e, config::app_data_dir())
+    })?;
 
     Ok(())
 }
