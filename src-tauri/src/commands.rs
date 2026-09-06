@@ -213,7 +213,10 @@ pub async fn get_config(state: State<'_, AppState>) -> Result<serde_json::Value,
         let masked = if key.is_empty() {
             String::new()
         } else {
-            format!("{}...{}", &key[..key.len().min(4)], &key[key.len().saturating_sub(4)..])
+            let chars: Vec<char> = key.chars().collect();
+            let head: String = chars.iter().take(4).collect();
+            let tail: String = chars.iter().rev().take(4).collect();
+            format!("{}...{}", head, tail.chars().rev().collect::<String>())
         };
         json["model"]["api_key"] = serde_json::Value::String(masked);
     }
