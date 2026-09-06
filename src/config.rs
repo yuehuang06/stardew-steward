@@ -130,7 +130,7 @@ fn find_newest_save(base: &Path) -> Option<String> {
     newest.map(|(_, p)| p)
 }
 
-/// 首次运行时将内置 Ferris 存档复制到 app data 目录
+/// 首次运行时将内置 Ferris 存档写入 app data 目录
 pub fn ensure_builtin_save() -> Option<String> {
     let dir = app_data_dir().join("saves").join("Rust");
     let save_file = dir.join("Rust");
@@ -139,16 +139,13 @@ pub fn ensure_builtin_save() -> Option<String> {
     }
     std::fs::create_dir_all(&dir).ok()?;
 
-    let builtin = Path::new(env!("CARGO_MANIFEST_DIR")).join("data/saves/Rust");
-    if !builtin.exists() {
-        return None;
-    }
-    std::fs::copy(&builtin, &save_file).ok()?;
+    // 从编译进二进制的内置存档中提取
+    let builtin_save = include_bytes!("../data/saves/Rust");
+    let builtin_info = include_bytes!("../data/saves/SaveGameInfo");
 
-    let builtin_info = Path::new(env!("CARGO_MANIFEST_DIR")).join("data/saves/SaveGameInfo");
-    if builtin_info.exists() {
-        std::fs::copy(&builtin_info, dir.join("SaveGameInfo")).ok();
-    }
+    std::fs::write(&save_file, builtin_save).ok()?;
+    std::fs::write(dir.join("SaveGameInfo"), builtin_info).ok()?;
+
     Some(save_file.to_string_lossy().into_owned())
 }
 
@@ -163,6 +160,37 @@ pub fn load() -> anyhow::Result<Config> {
         let default = default_config(&save_path);
         let text = toml::to_string_pretty(&default)?;
         std::fs::write(&config_path, text)?;
+
+        // 同时写入一份带注释的示例文件供用户参考
+        let example = format!(
+            "# Stardew Steward 配置文件\n\
+            # 此文件位于应用数据目录，可手动编辑也可在 GUI 设置面板修改\n\
+            # 修改后重启应用生效\n\n\
+            [model]\n\
+            # API 配置 — 支持任意 OpenAI 兼容的 endpoint\n\
+            # 切换到 OpenAI: endpoint = \"https://api.openai.com/v1\"\n\
+            # 切换到本地: endpoint = \"http://localhost:11434/v1\"\n\
+            endpoint = \"{}\"\n\
+            api_key = \"在此填入你的 API Key\"\n\
+            model = \"{}\"\n\
+            context_length = {}\n\
+            thinking_mode = {}\n\
+            price_input = {}\n\
+            price_output = {}\n\n\
+            [save]\n\
+            # 存档路径 — 留空则自动检测星露谷存档\n\
+            path = \"{}\"\n\n\
+            [agent]\n\
+            # 每会话 Token 预算（达到上限自动中断）\n\
+            token_budget = {}\n\
+            max_steps = {}\n\n\
+            [knowledge]\n\
+            db_path = \"knowledge.db\"\n",
+            default.model.endpoint, default.model.model, default.model.context_length,
+            default.model.thinking_mode, default.model.price_input, default.model.price_output,
+            save_path, default.agent.token_budget, default.agent.max_steps,
+        );
+        std::fs::write(dir.join("config.toml.example"), example).ok();
     }
 
     let text = std::fs::read_to_string(&config_path)

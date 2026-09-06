@@ -4,7 +4,7 @@
 
 ## 快速开始
 
-### CLI 模式
+### CLI 模式（开发）
 
 ```bash
 # 1. 复制配置
@@ -21,26 +21,33 @@ cargo run
 ### GUI 模式 (Tauri 桌面窗口)
 
 ```bash
-# 1. 同上配置 config.toml 和 .env
-
-# 2. 安装前端依赖
+# 开发模式
 cd frontend && npm install && cd ..
-
-# 3. 开发模式运行
 cd src-tauri && cargo tauri dev
-
-# 或直接在项目根目录
-cargo tauri dev
 ```
 
-GUI 特性：
-- 像素风窗口（透明/无边框/始终置顶/可伸缩 280↔480px）
-- 日程卡片（JSON → 像素风卡片，优先级中文标签）
-- 打字机效果（逐字显示，闪烁光标）
-- Markdown 渲染（表格/加粗/列表）
-- 会话管理（自动保存/加载/删除/新建）
-- 设置面板（API 配置/用量统计，在线修改并持久化）
-- 进度步骤（实时闪烁，停止按钮打断）
+### 打包分发
+
+```bash
+cargo tauri build
+# 生成 MSI/NSIS 安装包，安装后用户无需任何开发环境
+```
+
+### 配置文件位置
+
+打包后配置文件位于应用数据目录（首次运行自动生成）：
+
+| 系统 | 路径 |
+|------|------|
+| Windows | `%APPDATA%\stardew-steward\config.toml` |
+| macOS | `~/Library/Application Support/stardew-steward/config.toml` |
+| Linux | `~/.config/stardew-steward/config.toml` |
+
+同目录下还会生成 `config.toml.example`（带注释的参考模板）。
+
+**两种配置方式：**
+1. **GUI 设置面板**（推荐普通用户）— 标题栏 ⚙ → 填 endpoint/key/model/context_length/thinking_mode/价格/Token预算 → 保存
+2. **手动编辑 config.toml**（高级用户）— 可在 OpenAI / 本地模型 / 清华 AI 平台之间切换 endpoint 和 model
 
 ## 配置说明（config.toml）
 
