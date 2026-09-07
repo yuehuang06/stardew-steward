@@ -82,7 +82,7 @@ impl Agent {
             self.history.iter()
                 .find(|m| matches!(m.role, Role::User))
                 .map(|m| {
-                    let t = m.content.trim();
+                    let t = strip_reminder(&m.content).trim();
                     if t.chars().count() <= 20 { t.to_string() }
                     else { format!("{}…", t.chars().take(20).collect::<String>()) }
                 })
@@ -195,7 +195,7 @@ impl Agent {
                     Role::Assistant => "assistant",
                     _ => unreachable!(),
                 };
-                (role.to_string(), m.content.clone())
+                (role.to_string(), strip_reminder(&m.content).to_string())
             })
             .collect()
     }
@@ -234,12 +234,11 @@ impl Agent {
 
     /// Agent 主循环
     pub async fn run(&mut self, user_message: &str) -> anyhow::Result<String> {
-        // 每次对话前提醒 LLM 重新读取最新存档（避免使用上下文中的旧数据）
-        let with_reminder = format!(
-            "[系统提醒: 玩家可能已推进游戏进度，存档状态可能已变化。请重新调用 read_save 获取最新存档。]\n{}",
-            user_message
-        );
-        self.history.push(Message::user(&with_reminder));
+        // 用户消息保持干净（会进历史/标题/展示），提醒用独立 system 消息注入
+        self.history.push(Message::user(user_message));
+        self.history.push(Message::system(
+            "系统提醒：玩家可能已推进游戏进度，存档状态可能已变化。请重新调用 read_save 工具获取最新存档，不要复用上下文中的旧存档数据。",
+        ));
 
         for _step in 0..self.config.agent.max_steps {
             if self.interrupted() {
@@ -507,6 +506,17 @@ fn extract_json(text: &str) -> Option<&str> {
         }
     }
     None
+}
+
+/// 清洗旧版会话中拼进用户消息的系统提醒前缀
+/// 旧格式: "[系统提醒: ...]\n实际消息"
+fn strip_reminder(content: &str) -> &str {
+    if let Some(rest) = content.strip_prefix("[系统提醒:") {
+        if let Some(nl) = rest.find('\n') {
+            return &rest[nl + 1..];
+        }
+    }
+    content
 }
 
 /// 轮询打断标记，置位时返回（用于 select! 打断 LLM 调用）
