@@ -552,6 +552,19 @@ fn describe_tool_call(call: &ToolCallRequest) -> String {
             format!("正在求解日程（{}项任务）", tasks)
         }
         "auto_schedule" => "正在自动生成日程".to_string(),
+        "crop_advisor" => "正在分析作物收益".to_string(),
+        "gift_finder" => "正在匹配送礼方案".to_string(),
+        "farm_hand" => {
+            let action = call.arguments["action"].as_str().unwrap_or("工作");
+            let what = match action {
+                "water_all" => "浇水",
+                "harvest_all" => "收获",
+                "clear_dead" => "清理枯株",
+                "rollback_day" => "回档到昨天",
+                _ => "工作",
+            };
+            format!("农场助手正在{}", what)
+        }
         _ => format!("正在执行: {}", call.name),
     }
 }

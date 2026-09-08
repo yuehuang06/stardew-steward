@@ -16,14 +16,15 @@ pub fn generate_tasks(state: &GameState, kb: &Arc<Mutex<KnowledgeBase>>) -> Vec<
     // 1. 收获 — 扫描所有真正可收获的作物（1.6 规则: fullGrown && dop<0）
     let mut harvest_by_name: HashMap<String, u32> = HashMap::new();
     let mut total_living_crops = 0u32;
-    let mut total_unwatered = 0u32;
+    let mut total_need_water = 0u32;
     for crop in &state.crops {
         if crop.is_dead {
             continue;
         }
         total_living_crops += 1;
-        if !crop.watered && !crop.harvestable {
-            total_unwatered += 1;
+        // 需要手浇 = 未浇 && 不在洒水器覆盖 && 还没成熟（成熟的不用浇）
+        if !crop.watered && !crop.sprinkler_covered && !crop.harvestable {
+            total_need_water += 1;
         }
         if crop.harvestable {
             *harvest_by_name.entry(crop.name.clone()).or_insert(0) += 1;
@@ -48,13 +49,18 @@ pub fn generate_tasks(state: &GameState, kb: &Arc<Mutex<KnowledgeBase>>) -> Vec<
         });
     }
 
-    // 2. 浇水 — 仅在确有未浇作物时生成；Junimo 小屋 / 雨天自动跳过
+    // 2. 浇水 — 只统计真正需要手浇的（排除洒水器覆盖 / Junimo / 雨天）
     let has_junimo = state.junimo_huts > 0;
-    if !state.weather.is_raining && !has_junimo && total_unwatered > 0 {
+    if !state.weather.is_raining && !has_junimo && total_need_water > 0 {
+        let auto_note = if state.sprinklers > 0 {
+            format!("（洒水器已覆盖其余作物）", )
+        } else {
+            String::new()
+        };
         tasks.push(Task {
-            name: format!("浇水（{}株未浇，其余已浇）", total_unwatered),
-            time_cost: total_unwatered as f32 * 0.02,
-            energy_cost: (total_unwatered as i32) * 2,
+            name: format!("浇水（{}株需要手浇{}）", total_need_water, auto_note),
+            time_cost: total_need_water as f32 * 0.02,
+            energy_cost: (total_need_water as i32) * 2,
             money_gain: 0,
             priority: Priority::Must,
         });

@@ -11,6 +11,10 @@ struct CompactState {
     skills: String,
     watered_summary: String,
     crop_summary: Vec<CropSummary>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    fruit_trees: Vec<String>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    trees: Vec<String>,
     top_friendships: Vec<String>,
     inventory: Vec<String>,
     chests: Vec<String>,
@@ -38,6 +42,8 @@ pub fn execute(path: &str) -> anyhow::Result<String> {
     let mut groups: HashMap<String, CropSummary> = HashMap::new();
     let mut total_living = 0u32;
     let mut total_unwatered = 0u32;
+    let mut total_sprinkler = 0u32;
+    let mut unwat_but_covered = 0u32; // 未浇但在洒水器范围内（6点会自动浇）
     for crop in &state.crops {
         if crop.is_dead {
             continue; // 枯死的作物不进汇总（换季后遗留的死株没有行动价值）
@@ -51,9 +57,16 @@ pub fn execute(path: &str) -> anyhow::Result<String> {
         });
         entry.count += 1;
         total_living += 1;
+        if crop.sprinkler_covered {
+            total_sprinkler += 1;
+        }
         if !crop.watered {
             total_unwatered += 1;
-            entry.unwatered += 1;
+            if crop.sprinkler_covered {
+                unwat_but_covered += 1;
+            } else {
+                entry.unwatered += 1;
+            }
         }
         entry.days_to_harvest.push(crop.days_to_harvest);
         if crop.harvestable {
@@ -64,22 +77,44 @@ pub fn execute(path: &str) -> anyhow::Result<String> {
     let mut crop_summary: Vec<_> = groups.into_values().collect();
     crop_summary.sort_by(|a, b| b.harvestable.cmp(&a.harvestable));
 
+    // 需要手浇 = 未浇水 且 不在洒水器覆盖内 且 没有 Junimo
+    let need_manual = if state.junimo_huts > 0 || state.weather.is_raining {
+        0
+    } else {
+        total_unwatered - unwat_but_covered
+    };
     let watered_summary = if state.junimo_huts > 0 {
         format!(
-            "已浇水{}/{}株（农场有{}个Junimo小屋，Junimo每天自动浇水，通常无需手动浇）",
-            total_living.saturating_sub(total_unwatered), total_living, state.junimo_huts
+            "已浇水{}/{}株，另有{}个Junimo小屋每天自动浇水，需手浇{}株",
+            total_living.saturating_sub(total_unwatered), total_living, state.junimo_huts, need_manual
+        )
+    } else if state.sprinklers > 0 {
+        format!(
+            "已浇水{}/{}株，{}个洒水器覆盖{}株（每天6点自动浇），需手浇{}株",
+            total_living.saturating_sub(total_unwatered), total_living, state.sprinklers, total_sprinkler, need_manual
         )
     } else if state.weather.is_raining {
         format!("今天下雨，{}株作物自动浇水", total_living)
     } else {
         format!(
-            "已浇水{}/{}株，未浇{}株",
-            total_living.saturating_sub(total_unwatered), total_living, total_unwatered
+            "已浇水{}/{}株，需手浇{}株",
+            total_living.saturating_sub(total_unwatered), total_living, need_manual
         )
     };
 
     let building_list: Vec<String> = state.buildings.iter()
         .map(|b| format!("{}×{}", b.name, b.count))
+        .collect();
+
+    let fruit_tree_list: Vec<String> = state.fruit_trees.iter()
+        .map(|f| {
+            let ready = if f.ready > 0 { format!("，{}株可摇果", f.ready) } else { String::new() };
+            format!("{}×{}(成熟{}/{}){}", f.name, f.count, f.mature, f.count, ready)
+        })
+        .collect();
+
+    let tree_list: Vec<String> = state.trees.iter()
+        .map(|t| format!("{}×{}(成材{})", t.name, t.count, t.mature))
         .collect();
 
     let top_friendships: Vec<String> = state.friendships.iter()
@@ -149,6 +184,8 @@ pub fn execute(path: &str) -> anyhow::Result<String> {
         ),
         crop_summary,
         watered_summary,
+        fruit_trees: fruit_tree_list,
+        trees: tree_list,
         top_friendships,
         inventory: state.inventory.iter()
             .map(|i| format!("{}×{}", i.name, i.count))

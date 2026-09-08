@@ -16,6 +16,9 @@ pub struct CropInfo {
     pub sell_price: i32,
     #[serde(default)]
     pub seed_cost: i32,
+    /// 分类: 作物 / 果树 / 采集品 / 树木（老数据缺省为作物）
+    #[serde(default)]
+    pub category: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -41,7 +44,11 @@ pub struct FishInfo {
 impl KnowledgeBase {
     pub fn open(path: &str) -> anyhow::Result<Self> {
         let conn = if std::path::Path::new(path).exists() {
-            Connection::open(path)?
+            let conn = Connection::open(path)?;
+            Self::init_tables(&conn)?;
+            // 老库迁移: 补 category 列（已存在则忽略报错）
+            let _ = conn.execute_batch("ALTER TABLE crops ADD COLUMN category TEXT");
+            conn
         } else {
             let conn = Connection::open(path)?;
             Self::init_tables(&conn)?;
@@ -61,7 +68,8 @@ impl KnowledgeBase {
                 growth_days INTEGER,
                 regrows INTEGER,
                 sell_price INTEGER,
-                seed_cost INTEGER
+                seed_cost INTEGER,
+                category TEXT
             );
             CREATE TABLE IF NOT EXISTS npcs (
                 name TEXT PRIMARY KEY,
@@ -100,9 +108,10 @@ impl KnowledgeBase {
     fn import_crops(&self, json: &str) -> anyhow::Result<()> {
         let map: HashMap<String, CropInfo> = serde_json::from_str(json)?;
         for (name, c) in map {
+            let category = c.category.clone().unwrap_or_else(|| "作物".into());
             self.conn.execute(
-                "INSERT OR REPLACE INTO crops VALUES (?, ?, ?, ?, ?, ?)",
-                params![name, c.season, c.growth_days, c.regrows as i32, c.sell_price, c.seed_cost],
+                "INSERT OR REPLACE INTO crops VALUES (?, ?, ?, ?, ?, ?, ?)",
+                params![name, c.season, c.growth_days, c.regrows as i32, c.sell_price, c.seed_cost, category],
             )?;
         }
         Ok(())
@@ -142,7 +151,7 @@ impl KnowledgeBase {
                 .map(|_| "name LIKE ?".to_string())
                 .collect();
             let sql = format!(
-                "SELECT name, season, growth_days, regrows, sell_price, seed_cost FROM crops WHERE {}",
+                "SELECT name, season, growth_days, regrows, sell_price, seed_cost, COALESCE(category,'作物') FROM crops WHERE {}",
                 crop_clauses.join(" OR ")
             );
             let mut stmt = self.conn.prepare(&sql)?;
@@ -150,15 +159,25 @@ impl KnowledgeBase {
                 .map(|k| k as &dyn rusqlite::ToSql)
                 .collect();
             let rows = stmt.query_map(params.as_slice(), |row| {
-                Ok(format!(
-                    "作物|{}: 季节={}, 生长{}天, {}复收, 售价{}g, 种子{}g",
-                    row.get::<_, String>(0)?,
-                    row.get::<_, String>(1)?,
-                    row.get::<_, i64>(2)?,
-                    if row.get::<_, i64>(3)? != 0 { "可" } else { "不" },
-                    row.get::<_, i64>(4)?,
-                    row.get::<_, i64>(5)?,
-                ))
+                let cat = row.get::<_, String>(6)?;
+                let body = if cat == "采集品" {
+                    format!("{}: 采集季={}, 售价{}g", row.get::<_, String>(0)?, row.get::<_, String>(1)?, row.get::<_, i64>(4)?)
+                } else if cat == "果树" {
+                    format!("{}: 结果季={}, 成熟{}天, 售价{}g", row.get::<_, String>(0)?, row.get::<_, String>(1)?, row.get::<_, i64>(2)?, row.get::<_, i64>(4)?)
+                } else if cat == "树木" {
+                    format!("{}: 产物售价{}g", row.get::<_, String>(0)?, row.get::<_, i64>(4)?)
+                } else {
+                    format!(
+                        "{}: 季节={}, 生长{}天, {}复收, 售价{}g, 种子{}g",
+                        row.get::<_, String>(0)?,
+                        row.get::<_, String>(1)?,
+                        row.get::<_, i64>(2)?,
+                        if row.get::<_, i64>(3)? != 0 { "可" } else { "不" },
+                        row.get::<_, i64>(4)?,
+                        row.get::<_, i64>(5)?,
+                    )
+                };
+                Ok(format!("{}|{}", cat, body))
             })?;
             for row in rows {
                 if let Ok(text) = row { results.push(text); }
@@ -234,7 +253,7 @@ impl KnowledgeBase {
     pub fn get_crop_info(&self, name: &str) -> Option<CropInfo> {
         self.conn
             .query_row(
-                "SELECT season, growth_days, regrows, sell_price, seed_cost FROM crops WHERE name = ?",
+                "SELECT season, growth_days, regrows, sell_price, seed_cost, category FROM crops WHERE name = ?",
                 [name],
                 |row| {
                     Ok(CropInfo {
@@ -243,16 +262,17 @@ impl KnowledgeBase {
                         regrows: row.get::<_, i64>(2)? != 0,
                         sell_price: row.get(3)?,
                         seed_cost: row.get(4)?,
+                        category: row.get(5)?,
                     })
                 },
             )
             .ok()
     }
 
-    /// 查询某季节所有作物
+    /// 查询某季节所有作物（仅限"作物"类，排除采集品/果树等）
     pub fn get_crops_for_season(&self, season: &str) -> Vec<(String, CropInfo)> {
         let mut stmt = self.conn
-            .prepare("SELECT name, season, growth_days, regrows, sell_price, seed_cost FROM crops WHERE season = ?")
+            .prepare("SELECT name, season, growth_days, regrows, sell_price, seed_cost, category FROM crops WHERE season = ? AND (category IS NULL OR category = '' OR category = '作物')")
             .ok();
         match &mut stmt {
             Some(stmt) => {
@@ -265,6 +285,7 @@ impl KnowledgeBase {
                             regrows: row.get::<_, i64>(3)? != 0,
                             sell_price: row.get(4)?,
                             seed_cost: row.get(5)?,
+                            category: row.get(6)?,
                         },
                     ))
                 }).ok();

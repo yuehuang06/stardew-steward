@@ -1,44 +1,695 @@
 {
-  "防风草": { "season": "spring", "growth_days": 4, "regrows": false, "sell_price": 35, "seed_cost": 20 },
-  "青豆": { "season": "spring", "growth_days": 10, "regrows": true, "regrow_days": 3, "sell_price": 40, "seed_cost": 60 },
-  "花椰菜": { "season": "spring", "growth_days": 12, "regrows": false, "sell_price": 175, "seed_cost": 80 },
-  "马铃薯": { "season": "spring", "growth_days": 6, "regrows": false, "sell_price": 80, "seed_cost": 50 },
-  "大蒜": { "season": "spring", "growth_days": 4, "regrows": false, "sell_price": 60, "seed_cost": 40 },
-  "甘蓝": { "season": "spring", "growth_days": 4, "regrows": false, "sell_price": 110, "seed_cost": 70 },
-  "蓝爵士": { "season": "spring", "growth_days": 6, "regrows": false, "sell_price": 50, "seed_cost": 30 },
-  "大黄": { "season": "spring", "growth_days": 13, "regrows": false, "sell_price": 220, "seed_cost": 100 },
-  "草莓": { "season": "spring", "growth_days": 8, "regrows": true, "regrow_days": 4, "sell_price": 120, "seed_cost": 100 },
-  "未碾稻米": { "season": "spring", "growth_days": 8, "regrows": false, "sell_price": 30, "seed_cost": 40 },
-  "杨桃": { "season": "summer", "growth_days": 13, "regrows": false, "sell_price": 750, "seed_cost": 200 },
-  "甜瓜": { "season": "summer", "growth_days": 12, "regrows": false, "sell_price": 250, "seed_cost": 80 },
-  "番茄": { "season": "summer", "growth_days": 11, "regrows": true, "regrow_days": 4, "sell_price": 60, "seed_cost": 50 },
-  "蓝莓": { "season": "summer", "growth_days": 13, "regrows": true, "regrow_days": 4, "sell_price": 50, "seed_cost": 80 },
-  "辣椒": { "season": "summer", "growth_days": 5, "regrows": true, "regrow_days": 3, "sell_price": 40, "seed_cost": 40 },
-  "啤酒花": { "season": "summer", "growth_days": 11, "regrows": true, "regrow_days": 3, "sell_price": 25, "seed_cost": 60 },
-  "小麦": { "season": "summer/fall", "growth_days": 4, "regrows": false, "sell_price": 25, "seed_cost": 10 },
-  "萝卜": { "season": "summer", "growth_days": 6, "regrows": false, "sell_price": 90, "seed_cost": 40 },
-  "红叶卷心菜": { "season": "summer", "growth_days": 9, "regrows": false, "sell_price": 260, "seed_cost": 100 },
-  "罂粟": { "season": "summer", "growth_days": 7, "regrows": false, "sell_price": 140, "seed_cost": 100 },
-  "夏季闪光花": { "season": "summer", "growth_days": 8, "regrows": false, "sell_price": 50, "seed_cost": 50 },
-  "向日葵": { "season": "summer/fall", "growth_days": 8, "regrows": false, "sell_price": 80, "seed_cost": 55 },
-  "西葫芦": { "season": "summer", "growth_days": 6, "regrows": true, "regrow_days": 3, "sell_price": 25, "seed_cost": 25 },
-  "玉米": { "season": "summer/fall", "growth_days": 14, "regrows": true, "regrow_days": 4, "sell_price": 50, "seed_cost": 150 },
-  "茄子": { "season": "fall", "growth_days": 5, "regrows": true, "regrow_days": 5, "sell_price": 60, "seed_cost": 30 },
-  "洋蓟": { "season": "fall", "growth_days": 8, "regrows": false, "sell_price": 160, "seed_cost": 30 },
-  "南瓜": { "season": "fall", "growth_days": 13, "regrows": false, "sell_price": 320, "seed_cost": 100 },
-  "小白菜": { "season": "fall", "growth_days": 4, "regrows": false, "sell_price": 80, "seed_cost": 50 },
-  "山药": { "season": "fall", "growth_days": 10, "regrows": false, "sell_price": 160, "seed_cost": 60 },
-  "蔓越莓": { "season": "fall", "growth_days": 7, "regrows": true, "regrow_days": 5, "sell_price": 130, "seed_cost": 240 },
-  "甜菜": { "season": "fall", "growth_days": 6, "regrows": false, "sell_price": 100, "seed_cost": 20 },
-  "苋菜": { "season": "fall", "growth_days": 7, "regrows": false, "sell_price": 150, "seed_cost": 70 },
-  "葡萄": { "season": "fall", "growth_days": 10, "regrows": true, "regrow_days": 3, "sell_price": 80, "seed_cost": 60 },
-  "玫瑰仙子": { "season": "fall", "growth_days": 12, "regrows": false, "sell_price": 290, "seed_cost": 200 },
-  "霜瓜": { "season": "winter", "growth_days": 7, "regrows": false, "sell_price": 90, "seed_cost": 60 },
-  "咖啡豆": { "season": "spring/summer", "growth_days": 10, "regrows": true, "regrow_days": 2, "sell_price": 30, "seed_cost": 2500 },
-  "远古水果": { "season": "all", "growth_days": 28, "regrows": true, "regrow_days": 7, "sell_price": 550, "seed_cost": 450 },
-  "甜宝石浆果": { "season": "fall", "growth_days": 24, "regrows": false, "sell_price": 3000, "seed_cost": 1000 },
-  "茶叶": { "season": "all", "growth_days": 20, "regrows": true, "regrow_days": 5, "sell_price": 50, "seed_cost": 200 },
-  "芋头": { "season": "summer", "growth_days": 10, "regrows": false, "sell_price": 100, "seed_cost": 60 },
-  "胡萝卜": { "season": "spring", "growth_days": 3, "regrows": false, "sell_price": 35, "seed_cost": 45 },
-  "姜": { "season": "all", "growth_days": 10, "regrows": true, "regrow_days": 0, "sell_price": 60, "seed_cost": 0 }
+  "防风草": {
+    "season": "spring",
+    "growth_days": 4,
+    "regrows": false,
+    "sell_price": 35,
+    "seed_cost": 20
+  },
+  "青豆": {
+    "season": "spring",
+    "growth_days": 10,
+    "regrows": true,
+    "regrow_days": 3,
+    "sell_price": 40,
+    "seed_cost": 60
+  },
+  "花椰菜": {
+    "season": "spring",
+    "growth_days": 12,
+    "regrows": false,
+    "sell_price": 175,
+    "seed_cost": 80
+  },
+  "马铃薯": {
+    "season": "spring",
+    "growth_days": 6,
+    "regrows": false,
+    "sell_price": 80,
+    "seed_cost": 50
+  },
+  "大蒜": {
+    "season": "spring",
+    "growth_days": 4,
+    "regrows": false,
+    "sell_price": 60,
+    "seed_cost": 40
+  },
+  "甘蓝": {
+    "season": "spring",
+    "growth_days": 4,
+    "regrows": false,
+    "sell_price": 110,
+    "seed_cost": 70
+  },
+  "蓝爵士": {
+    "season": "spring",
+    "growth_days": 6,
+    "regrows": false,
+    "sell_price": 50,
+    "seed_cost": 30
+  },
+  "大黄": {
+    "season": "spring",
+    "growth_days": 13,
+    "regrows": false,
+    "sell_price": 220,
+    "seed_cost": 100
+  },
+  "草莓": {
+    "season": "spring",
+    "growth_days": 8,
+    "regrows": true,
+    "regrow_days": 4,
+    "sell_price": 120,
+    "seed_cost": 100
+  },
+  "未碾稻米": {
+    "season": "spring",
+    "growth_days": 8,
+    "regrows": false,
+    "sell_price": 30,
+    "seed_cost": 40
+  },
+  "杨桃": {
+    "season": "summer",
+    "growth_days": 13,
+    "regrows": false,
+    "sell_price": 750,
+    "seed_cost": 200
+  },
+  "甜瓜": {
+    "season": "summer",
+    "growth_days": 12,
+    "regrows": false,
+    "sell_price": 250,
+    "seed_cost": 80
+  },
+  "番茄": {
+    "season": "summer",
+    "growth_days": 11,
+    "regrows": true,
+    "regrow_days": 4,
+    "sell_price": 60,
+    "seed_cost": 50
+  },
+  "蓝莓": {
+    "season": "summer",
+    "growth_days": 13,
+    "regrows": true,
+    "regrow_days": 4,
+    "sell_price": 50,
+    "seed_cost": 80
+  },
+  "辣椒": {
+    "season": "summer",
+    "growth_days": 5,
+    "regrows": true,
+    "regrow_days": 3,
+    "sell_price": 40,
+    "seed_cost": 40
+  },
+  "啤酒花": {
+    "season": "summer",
+    "growth_days": 11,
+    "regrows": true,
+    "regrow_days": 3,
+    "sell_price": 25,
+    "seed_cost": 60
+  },
+  "小麦": {
+    "season": "summer/fall",
+    "growth_days": 4,
+    "regrows": false,
+    "sell_price": 25,
+    "seed_cost": 10
+  },
+  "萝卜": {
+    "season": "summer",
+    "growth_days": 6,
+    "regrows": false,
+    "sell_price": 90,
+    "seed_cost": 40
+  },
+  "红叶卷心菜": {
+    "season": "summer",
+    "growth_days": 9,
+    "regrows": false,
+    "sell_price": 260,
+    "seed_cost": 100
+  },
+  "罂粟": {
+    "season": "summer",
+    "growth_days": 7,
+    "regrows": false,
+    "sell_price": 140,
+    "seed_cost": 100
+  },
+  "夏季闪光花": {
+    "season": "summer",
+    "growth_days": 8,
+    "regrows": false,
+    "sell_price": 50,
+    "seed_cost": 50
+  },
+  "向日葵": {
+    "season": "summer/fall",
+    "growth_days": 8,
+    "regrows": false,
+    "sell_price": 80,
+    "seed_cost": 55
+  },
+  "西葫芦": {
+    "season": "summer",
+    "growth_days": 6,
+    "regrows": true,
+    "regrow_days": 3,
+    "sell_price": 25,
+    "seed_cost": 25
+  },
+  "玉米": {
+    "season": "summer/fall",
+    "growth_days": 14,
+    "regrows": true,
+    "regrow_days": 4,
+    "sell_price": 50,
+    "seed_cost": 150
+  },
+  "茄子": {
+    "season": "fall",
+    "growth_days": 5,
+    "regrows": true,
+    "regrow_days": 5,
+    "sell_price": 60,
+    "seed_cost": 30
+  },
+  "洋蓟": {
+    "season": "fall",
+    "growth_days": 8,
+    "regrows": false,
+    "sell_price": 160,
+    "seed_cost": 30
+  },
+  "南瓜": {
+    "season": "fall",
+    "growth_days": 13,
+    "regrows": false,
+    "sell_price": 320,
+    "seed_cost": 100
+  },
+  "小白菜": {
+    "season": "fall",
+    "growth_days": 4,
+    "regrows": false,
+    "sell_price": 80,
+    "seed_cost": 50
+  },
+  "山药": {
+    "season": "fall",
+    "growth_days": 10,
+    "regrows": false,
+    "sell_price": 160,
+    "seed_cost": 60
+  },
+  "蔓越莓": {
+    "season": "fall",
+    "growth_days": 7,
+    "regrows": true,
+    "regrow_days": 5,
+    "sell_price": 130,
+    "seed_cost": 240
+  },
+  "甜菜": {
+    "season": "fall",
+    "growth_days": 6,
+    "regrows": false,
+    "sell_price": 100,
+    "seed_cost": 20
+  },
+  "苋菜": {
+    "season": "fall",
+    "growth_days": 7,
+    "regrows": false,
+    "sell_price": 150,
+    "seed_cost": 70
+  },
+  "葡萄": {
+    "season": "fall",
+    "growth_days": 10,
+    "regrows": true,
+    "regrow_days": 3,
+    "sell_price": 80,
+    "seed_cost": 60
+  },
+  "玫瑰仙子": {
+    "season": "fall",
+    "growth_days": 12,
+    "regrows": false,
+    "sell_price": 290,
+    "seed_cost": 200
+  },
+  "霜瓜": {
+    "season": "winter",
+    "growth_days": 7,
+    "regrows": false,
+    "sell_price": 90,
+    "seed_cost": 60
+  },
+  "咖啡豆": {
+    "season": "spring/summer",
+    "growth_days": 10,
+    "regrows": true,
+    "regrow_days": 2,
+    "sell_price": 30,
+    "seed_cost": 2500
+  },
+  "远古水果": {
+    "season": "all",
+    "growth_days": 28,
+    "regrows": true,
+    "regrow_days": 7,
+    "sell_price": 550,
+    "seed_cost": 450
+  },
+  "甜宝石浆果": {
+    "season": "fall",
+    "growth_days": 24,
+    "regrows": false,
+    "sell_price": 3000,
+    "seed_cost": 1000
+  },
+  "茶叶": {
+    "season": "all",
+    "growth_days": 20,
+    "regrows": true,
+    "regrow_days": 5,
+    "sell_price": 50,
+    "seed_cost": 200
+  },
+  "芋头": {
+    "season": "summer",
+    "growth_days": 10,
+    "regrows": false,
+    "sell_price": 100,
+    "seed_cost": 60
+  },
+  "胡萝卜": {
+    "season": "spring",
+    "growth_days": 3,
+    "regrows": false,
+    "sell_price": 35,
+    "seed_cost": 45
+  },
+  "姜": {
+    "season": "all",
+    "growth_days": 10,
+    "regrows": true,
+    "regrow_days": 0,
+    "sell_price": 60,
+    "seed_cost": 0
+  },
+  "樱桃树": {
+    "season": "spring",
+    "growth_days": 28,
+    "regrows": true,
+    "sell_price": 80,
+    "seed_cost": 2000,
+    "category": "果树"
+  },
+  "杏树": {
+    "season": "spring",
+    "growth_days": 28,
+    "regrows": true,
+    "sell_price": 55,
+    "seed_cost": 2000,
+    "category": "果树"
+  },
+  "橙树": {
+    "season": "summer",
+    "growth_days": 28,
+    "regrows": true,
+    "sell_price": 100,
+    "seed_cost": 2000,
+    "category": "果树"
+  },
+  "桃树": {
+    "season": "summer",
+    "growth_days": 28,
+    "regrows": true,
+    "sell_price": 140,
+    "seed_cost": 2000,
+    "category": "果树"
+  },
+  "石榴树": {
+    "season": "fall",
+    "growth_days": 28,
+    "regrows": true,
+    "sell_price": 140,
+    "seed_cost": 2000,
+    "category": "果树"
+  },
+  "苹果树": {
+    "season": "fall",
+    "growth_days": 28,
+    "regrows": true,
+    "sell_price": 100,
+    "seed_cost": 2000,
+    "category": "果树"
+  },
+  "芒果树": {
+    "season": "summer",
+    "growth_days": 28,
+    "regrows": true,
+    "sell_price": 130,
+    "seed_cost": 1050,
+    "category": "果树"
+  },
+  "香蕉树": {
+    "season": "summer",
+    "growth_days": 28,
+    "regrows": true,
+    "sell_price": 150,
+    "seed_cost": 1100,
+    "category": "果树"
+  },
+  "枫树": {
+    "season": "all",
+    "growth_days": 28,
+    "regrows": true,
+    "sell_price": 200,
+    "seed_cost": 0,
+    "category": "树木"
+  },
+  "橡树": {
+    "season": "all",
+    "growth_days": 28,
+    "regrows": true,
+    "sell_price": 150,
+    "seed_cost": 0,
+    "category": "树木"
+  },
+  "松树": {
+    "season": "all",
+    "growth_days": 28,
+    "regrows": true,
+    "sell_price": 100,
+    "seed_cost": 0,
+    "category": "树木"
+  },
+  "桃花心木": {
+    "season": "all",
+    "growth_days": 28,
+    "regrows": true,
+    "sell_price": 150,
+    "seed_cost": 0,
+    "category": "树木"
+  },
+  "棕榈树": {
+    "season": "summer",
+    "growth_days": 28,
+    "regrows": true,
+    "sell_price": 100,
+    "seed_cost": 0,
+    "category": "树木"
+  },
+  "蘑菇树": {
+    "season": "all",
+    "growth_days": 28,
+    "regrows": true,
+    "sell_price": 250,
+    "seed_cost": 0,
+    "category": "树木"
+  },
+  "绿茶树": {
+    "season": "all",
+    "growth_days": 20,
+    "regrows": true,
+    "sell_price": 50,
+    "seed_cost": 200,
+    "category": "树木"
+  },
+  "野山葵": {
+    "season": "spring",
+    "growth_days": 0,
+    "regrows": false,
+    "sell_price": 50,
+    "seed_cost": 0,
+    "category": "采集品"
+  },
+  "黄水仙": {
+    "season": "spring",
+    "growth_days": 0,
+    "regrows": false,
+    "sell_price": 30,
+    "seed_cost": 0,
+    "category": "采集品"
+  },
+  "韭葱": {
+    "season": "spring",
+    "growth_days": 0,
+    "regrows": false,
+    "sell_price": 60,
+    "seed_cost": 0,
+    "category": "采集品"
+  },
+  "蒲公英": {
+    "season": "spring",
+    "growth_days": 0,
+    "regrows": false,
+    "sell_price": 40,
+    "seed_cost": 0,
+    "category": "采集品"
+  },
+  "羊肚菌": {
+    "season": "spring",
+    "growth_days": 0,
+    "regrows": false,
+    "sell_price": 150,
+    "seed_cost": 0,
+    "category": "采集品"
+  },
+  "美洲大树莓": {
+    "season": "spring",
+    "growth_days": 0,
+    "regrows": false,
+    "sell_price": 5,
+    "seed_cost": 0,
+    "category": "采集品"
+  },
+  "春葱": {
+    "season": "spring",
+    "growth_days": 0,
+    "regrows": false,
+    "sell_price": 8,
+    "seed_cost": 0,
+    "category": "采集品"
+  },
+  "蕨菜": {
+    "season": "summer",
+    "growth_days": 0,
+    "regrows": false,
+    "sell_price": 90,
+    "seed_cost": 0,
+    "category": "采集品"
+  },
+  "红蘑菇": {
+    "season": "summer",
+    "growth_days": 0,
+    "regrows": false,
+    "sell_price": 75,
+    "seed_cost": 0,
+    "category": "采集品"
+  },
+  "香料浆果": {
+    "season": "summer",
+    "growth_days": 0,
+    "regrows": false,
+    "sell_price": 80,
+    "seed_cost": 0,
+    "category": "采集品"
+  },
+  "甜豌豆": {
+    "season": "summer",
+    "growth_days": 0,
+    "regrows": false,
+    "sell_price": 50,
+    "seed_cost": 0,
+    "category": "采集品"
+  },
+  "黑莓": {
+    "season": "fall",
+    "growth_days": 0,
+    "regrows": false,
+    "sell_price": 20,
+    "seed_cost": 0,
+    "category": "采集品"
+  },
+  "鸡油菌": {
+    "season": "fall",
+    "growth_days": 0,
+    "regrows": false,
+    "sell_price": 160,
+    "seed_cost": 0,
+    "category": "采集品"
+  },
+  "普通蘑菇": {
+    "season": "fall",
+    "growth_days": 0,
+    "regrows": false,
+    "sell_price": 40,
+    "seed_cost": 0,
+    "category": "采集品"
+  },
+  "榛子": {
+    "season": "fall",
+    "growth_days": 0,
+    "regrows": false,
+    "sell_price": 90,
+    "seed_cost": 0,
+    "category": "采集品"
+  },
+  "紫蘑菇": {
+    "season": "fall",
+    "growth_days": 0,
+    "regrows": false,
+    "sell_price": 250,
+    "seed_cost": 0,
+    "category": "采集品"
+  },
+  "野梅": {
+    "season": "fall",
+    "growth_days": 0,
+    "regrows": false,
+    "sell_price": 80,
+    "seed_cost": 0,
+    "category": "采集品"
+  },
+  "冬根": {
+    "season": "winter",
+    "growth_days": 0,
+    "regrows": false,
+    "sell_price": 70,
+    "seed_cost": 0,
+    "category": "采集品"
+  },
+  "水晶果": {
+    "season": "winter",
+    "growth_days": 0,
+    "regrows": false,
+    "sell_price": 150,
+    "seed_cost": 0,
+    "category": "采集品"
+  },
+  "雪山药": {
+    "season": "winter",
+    "growth_days": 0,
+    "regrows": false,
+    "sell_price": 100,
+    "seed_cost": 0,
+    "category": "采集品"
+  },
+  "番红花": {
+    "season": "winter",
+    "growth_days": 0,
+    "regrows": false,
+    "sell_price": 60,
+    "seed_cost": 0,
+    "category": "采集品"
+  },
+  "冬青": {
+    "season": "winter",
+    "growth_days": 0,
+    "regrows": false,
+    "sell_price": 80,
+    "seed_cost": 0,
+    "category": "采集品"
+  },
+  "树液": {
+    "season": "all",
+    "growth_days": 0,
+    "regrows": false,
+    "sell_price": 2,
+    "seed_cost": 0,
+    "category": "采集品"
+  },
+  "珊瑚": {
+    "season": "all",
+    "growth_days": 0,
+    "regrows": false,
+    "sell_price": 90,
+    "seed_cost": 0,
+    "category": "采集品"
+  },
+  "彩虹贝壳": {
+    "season": "all",
+    "growth_days": 0,
+    "regrows": false,
+    "sell_price": 150,
+    "seed_cost": 0,
+    "category": "采集品"
+  },
+  "鹦鹉螺": {
+    "season": "all",
+    "growth_days": 0,
+    "regrows": false,
+    "sell_price": 120,
+    "seed_cost": 0,
+    "category": "采集品"
+  },
+  "牡蛎": {
+    "season": "all",
+    "growth_days": 0,
+    "regrows": false,
+    "sell_price": 40,
+    "seed_cost": 0,
+    "category": "采集品"
+  },
+  "蛤蜊": {
+    "season": "all",
+    "growth_days": 0,
+    "regrows": false,
+    "sell_price": 50,
+    "seed_cost": 0,
+    "category": "采集品"
+  },
+  "鸟蛤": {
+    "season": "all",
+    "growth_days": 0,
+    "regrows": false,
+    "sell_price": 50,
+    "seed_cost": 0,
+    "category": "采集品"
+  },
+  "贻贝": {
+    "season": "all",
+    "growth_days": 0,
+    "regrows": false,
+    "sell_price": 30,
+    "seed_cost": 0,
+    "category": "采集品"
+  },
+  "仙人掌果": {
+    "season": "summer",
+    "growth_days": 0,
+    "regrows": false,
+    "sell_price": 75,
+    "seed_cost": 0,
+    "category": "采集品"
+  },
+  "洞穴胡萝卜": {
+    "season": "all",
+    "growth_days": 0,
+    "regrows": false,
+    "sell_price": 25,
+    "seed_cost": 0,
+    "category": "采集品"
+  },
+  "松露": {
+    "season": "all",
+    "growth_days": 0,
+    "regrows": false,
+    "sell_price": 625,
+    "seed_cost": 0,
+    "category": "采集品"
+  }
 }

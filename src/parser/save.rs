@@ -68,7 +68,6 @@ fn parse_xml(xml: &str) -> anyhow::Result<GameState> {
 
     let skills = parse_skills(&player);
 
-    let crops = parse_crops(&root);
 
     let friendships = parse_friendships(&player);
 
@@ -79,6 +78,8 @@ fn parse_xml(xml: &str) -> anyhow::Result<GameState> {
     let quests = parse_quests(&player);
 
     let (buildings, junimo_huts) = parse_buildings(&root);
+
+    let (crops, sprinklers, fruit_trees, trees) = parse_crops_and_trees(&root);
 
     Ok(GameState {
         money,
@@ -93,6 +94,9 @@ fn parse_xml(xml: &str) -> anyhow::Result<GameState> {
         quests,
         buildings,
         junimo_huts,
+        sprinklers,
+        fruit_trees,
+        trees,
     })
 }
 
@@ -446,12 +450,92 @@ fn extract_chests_from_objects(objects: &roxmltree::Node, loc_label: &str, resul
     }
 }
 
-fn parse_crops(root: &roxmltree::Node) -> Vec<CropStatus> {
-    let mut result = Vec::new();
+/// 计算一个地点内所有洒水器的覆盖格集合
+/// - Sprinkler(基础): 十字4格; +增压喷嘴 → 3x3
+/// - Quality Sprinkler: 3x3; +增压喷嘴 → 5x5
+/// - Iridium Sprinkler: 5x5; +增压喷嘴 → 7x7
+fn sprinkler_coverage(loc: &roxmltree::Node) -> std::collections::HashSet<(i32, i32)> {
+    let mut covered = std::collections::HashSet::new();
+    let objects = match loc.children().find(|n| n.has_tag_name("objects")) {
+        Some(o) => o,
+        None => return covered,
+    };
+    for item in objects.children().filter(|n| n.has_tag_name("item")) {
+        let val = match item.children().find(|n| n.has_tag_name("value")) {
+            Some(v) => v,
+            None => continue,
+        };
+        let obj = match val.children().find(|n| n.is_element()) {
+            Some(o) => o,
+            None => continue,
+        };
+        let name = obj.children()
+            .find(|n| n.has_tag_name("name"))
+            .and_then(|n| n.text())
+            .unwrap_or("")
+            .trim()
+            .to_string();
+        let radius = match name.as_str() {
+            "Sprinkler" => 1,            // 十字(特判) / 喷嘴后 3x3
+            "Quality Sprinkler" => 2,    // 3x3 / 喷嘴后 5x5
+            "Iridium Sprinkler" => 3,    // 5x5 / 喷嘴后 7x7
+            _ => continue,
+        };
+        let has_nozzle = obj.children()
+            .find(|n| n.has_tag_name("heldObject"))
+            .map(|h| {
+                h.children()
+                    .filter(|n| n.has_tag_name("name"))
+                    .filter_map(|n| n.text())
+                    .any(|t| t.contains("Pressure Nozzle"))
+            })
+            .unwrap_or(false);
+
+        let pos = item.children()
+            .find(|n| n.has_tag_name("key"))
+            .and_then(|k| k.children().find(|n| n.has_tag_name("Vector2")));
+        let (x, y) = match pos {
+            Some(v) => {
+                let gx = v.children().find(|n| n.has_tag_name("X"))
+                    .and_then(|n| n.text()).and_then(|t| t.trim().parse::<i32>().ok()).unwrap_or(-999);
+                let gy = v.children().find(|n| n.has_tag_name("Y"))
+                    .and_then(|n| n.text()).and_then(|t| t.trim().parse::<i32>().ok()).unwrap_or(-999);
+                (gx, gy)
+            }
+            None => continue,
+        };
+
+        let r = if has_nozzle { radius + 1 } else { radius };
+        // 基础洒水器无喷嘴: 只浇十字4格
+        if name == "Sprinkler" && !has_nozzle {
+            for (dx, dy) in [(1, 0), (-1, 0), (0, 1), (0, -1)] {
+                covered.insert((x + dx, y + dy));
+            }
+        } else {
+            for dx in -r..=r {
+                for dy in -r..=r {
+                    if dx == 0 && dy == 0 {
+                        continue;
+                    }
+                    covered.insert((x + dx, y + dy));
+                }
+            }
+        }
+    }
+    covered
+}
+
+fn parse_crops_and_trees(
+    root: &roxmltree::Node,
+) -> (Vec<CropStatus>, u32, Vec<FruitTreeStatus>, Vec<TreeStatus>) {
+    let mut crops = Vec::new();
+    let mut sprinkler_count = 0u32;
+    let mut fruit_map: std::collections::BTreeMap<String, (u32, u32, u32)> = Default::default();
+    let mut tree_map: std::collections::BTreeMap<String, (u32, u32)> = Default::default();
 
     let locations = match root.children().find(|n| n.has_tag_name("locations")) {
         Some(l) => l,
-        None => return result,
+        None => return (crops, 0, Vec::new(), Vec::new()),
     };
 
     for loc in locations.children().filter(|n| n.is_element()) {
@@ -466,17 +550,177 @@ fn parse_crops(root: &roxmltree::Node) -> Vec<CropStatus> {
             continue;
         }
 
+        let coverage = sprinkler_coverage(&loc);
+        // 精确计数洒水器对象数
+        if let Some(objects) = loc.children().find(|n| n.has_tag_name("objects")) {
+            for item in objects.children().filter(|n| n.has_tag_name("item")) {
+                if let Some(v) = item.children().find(|n| n.has_tag_name("value")) {
+                    if let Some(o) = v.children().find(|n| n.is_element()) {
+                        if let Some(nm) = o.children().find(|n| n.has_tag_name("name")).and_then(|n| n.text()) {
+                            if nm.trim().ends_with("Sprinkler") {
+                                sprinkler_count += 1;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         if let Some(tf) = loc.children().find(|n| n.has_tag_name("terrainFeatures")) {
             for item in tf.children().filter(|n| n.has_tag_name("item")) {
-                if let Some(crop) = extract_crop_from_terrain(&item) {
-                    result.push(crop);
+                let value = match item.children().find(|n| n.has_tag_name("value")) {
+                    Some(v) => v,
+                    None => continue,
+                };
+                let terrain = match value.children().find(|n| n.has_tag_name("TerrainFeature")) {
+                    Some(t) => t,
+                    None => continue,
+                };
+                let xsi = terrain.attributes()
+                    .find(|a| a.name() == "type")
+                    .map(|a| a.value())
+                    .unwrap_or("");
+
+                let tile = item.children()
+                    .find(|n| n.has_tag_name("key"))
+                    .and_then(|k| k.children().find(|n| n.has_tag_name("Vector2")))
+                    .map(|v| {
+                        (
+                            v.children().find(|n| n.has_tag_name("X"))
+                                .and_then(|n| n.text()).and_then(|t| t.trim().parse::<i32>().ok()).unwrap_or(-999),
+                            v.children().find(|n| n.has_tag_name("Y"))
+                                .and_then(|n| n.text()).and_then(|t| t.trim().parse::<i32>().ok()).unwrap_or(-999),
+                        )
+                    });
+
+                match xsi {
+                    "HoeDirt" => {
+                        if let Some(mut crop) = extract_crop_from_terrain(&item) {
+                            if let Some((tx, ty)) = tile {
+                                crop.sprinkler_covered = coverage.contains(&(tx, ty));
+                            }
+                            crops.push(crop);
+                        }
+                    }
+                    "FruitTree" => {
+                        let (ft_name, mature, ready) = parse_fruit_tree(&terrain);
+                        let e = fruit_map.entry(ft_name).or_insert((0, 0, 0));
+                        e.0 += 1;
+                        if mature { e.1 += 1; }
+                        if ready { e.2 += 1; }
+                    }
+                    "Tree" => {
+                        let (t_name, mature) = parse_tree(&terrain);
+                        let e = tree_map.entry(t_name).or_insert((0, 0));
+                        e.0 += 1;
+                        if mature { e.1 += 1; }
+                    }
+                    _ => {}
                 }
             }
         }
     }
 
-    result.sort_by(|a, b| a.days_to_harvest.cmp(&b.days_to_harvest));
-    result
+    crops.sort_by(|a, b| a.days_to_harvest.cmp(&b.days_to_harvest));
+
+    let fruit_trees = fruit_map.into_iter()
+        .map(|(name, (count, mature, ready))| FruitTreeStatus { name, count, mature, ready })
+        .collect();
+    let trees = tree_map.into_iter()
+        .map(|(name, (count, mature))| TreeStatus { name, count, mature })
+        .collect();
+
+    (crops, sprinkler_count, fruit_trees, trees)
+}
+
+/// 果树: 优先取 <fruit><name>，回退 treeId 映射
+fn parse_fruit_tree(terrain: &roxmltree::Node) -> (String, bool, bool) {
+    let name = terrain.children()
+        .find(|n| n.has_tag_name("fruit"))
+        .and_then(|f| f.children().find(|n| n.has_tag_name("name")))
+        .and_then(|n| n.text())
+        .map(|t| fruit_name_cn(t.trim()))
+        .or_else(|| {
+            terrain.children()
+                .find(|n| n.has_tag_name("treeId"))
+                .and_then(|n| n.text())
+                .and_then(|t| t.trim().parse::<i32>().ok())
+                .map(tree_id_cn)
+        })
+        .unwrap_or_else(|| "未知果树".into());
+
+    // daysUntilMature <= 0 表示已成熟（成熟后为负数）
+    let mature = terrain.children()
+        .find(|n| n.has_tag_name("daysUntilMature"))
+        .and_then(|n| n.text())
+        .and_then(|t| t.trim().parse::<i32>().ok())
+        .map(|d| d <= 0)
+        .unwrap_or(false);
+
+    // fruitsOnTree > 0 = 当前有果子可摇（可能为 xsi:nil）
+    let ready = terrain.children()
+        .find(|n| n.has_tag_name("fruitsOnTree"))
+        .and_then(|n| n.text())
+        .and_then(|t| t.trim().parse::<i32>().ok())
+        .map(|f| f > 0)
+        .unwrap_or(false);
+
+    (name, mature, ready)
+}
+
+fn fruit_name_cn(en: &str) -> String {
+    match en {
+        "Cherry" => "樱桃树",
+        "Apricot" => "杏树",
+        "Orange" => "橙树",
+        "Peach" => "桃树",
+        "Pomegranate" => "石榴树",
+        "Apple" => "苹果树",
+        "Mango" => "芒果树",
+        "Banana" => "香蕉树",
+        "Coconut" => "棕榈树",
+        _ => return format!("{}树", en),
+    }.to_string()
+}
+
+fn tree_id_cn(id: i32) -> String {
+    match id {
+        628 => "樱桃树",
+        629 => "杏树",
+        630 => "橙树",
+        631 => "桃树",
+        632 => "石榴树",
+        633 => "苹果树",
+        634 => "芒果树",
+        635 => "香蕉树",
+        _ => "果树",
+    }.to_string()
+}
+
+fn parse_tree(terrain: &roxmltree::Node) -> (String, bool) {
+    let ttype = terrain.children()
+        .find(|n| n.has_tag_name("treeType"))
+        .and_then(|n| n.text())
+        .and_then(|t| t.trim().parse::<i32>().ok())
+        .unwrap_or(-1);
+    let name = match ttype {
+        1 => "枫树",
+        2 => "橡树",
+        3 => "松树",
+        6 => "棕榈树",
+        7 => "桃花心木",
+        8 => "蘑菇树",
+        9 => "绿茶树",
+        13 => "苔藓树",
+        _ => "野生树苗",
+    }.to_string();
+    let mature = terrain.children()
+        .find(|n| n.has_tag_name("growthStage"))
+        .and_then(|n| n.text())
+        .and_then(|t| t.trim().parse::<i32>().ok())
+        .map(|g| g >= 4)
+        .unwrap_or(false);
+    (name, mature)
 }
 
 fn extract_crop_from_terrain(item: &roxmltree::Node) -> Option<CropStatus> {
@@ -613,6 +857,7 @@ fn extract_crop_from_terrain(item: &roxmltree::Node) -> Option<CropStatus> {
         is_dead,
         watered,
         harvestable,
+        sprinkler_covered: false,
     })
 }
 

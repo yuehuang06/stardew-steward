@@ -22,6 +22,15 @@ pub struct GameState {
     /// Junimo 小屋数量（自动浇水）
     #[serde(default)]
     pub junimo_huts: u32,
+    /// 洒水器数量（含增压喷嘴的）
+    #[serde(default)]
+    pub sprinklers: u32,
+    /// 果树状态
+    #[serde(default)]
+    pub fruit_trees: Vec<FruitTreeStatus>,
+    /// 树木状态
+    #[serde(default)]
+    pub trees: Vec<TreeStatus>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -31,6 +40,22 @@ pub struct BuildingInfo {
     /// 中文名（如 "高级鸡舍"）
     pub name: String,
     pub count: u32,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct FruitTreeStatus {
+    pub name: String,
+    pub count: u32,
+    pub mature: u32,
+    /// 当前置信可摇取（fruitsOnTree > 0）
+    pub ready: u32,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct TreeStatus {
+    pub name: String,
+    pub count: u32,
+    pub mature: u32,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -72,6 +97,9 @@ pub struct CropStatus {
     /// 1.6 收获规则: currentPhase 在 99999 槽位 && fullGrown && dayOfCurrentPhase < 0
     #[serde(default)]
     pub harvestable: bool,
+    /// 是否被洒水器覆盖（6 点自动浇水，无需手浇）
+    #[serde(default)]
+    pub sprinkler_covered: bool,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -119,8 +147,8 @@ impl GameState {
             daily_luck: 0.054,
             skills: Skills { farming: 6, mining: 2, combat: 1, foraging: 5, fishing: 4 },
             crops: vec![
-                CropStatus { item_id: 258, name: "蓝莓".into(), x: 60.0, y: 27.0, current_phase: 5, total_phases: 6, days_to_harvest: 0, is_dead: false, watered: true, harvestable: true },
-                CropStatus { item_id: 304, name: "辣椒".into(), x: 61.0, y: 26.0, current_phase: 5, total_phases: 6, days_to_harvest: 0, is_dead: false, watered: false, harvestable: true },
+                CropStatus { item_id: 258, name: "蓝莓".into(), x: 60.0, y: 27.0, current_phase: 5, total_phases: 6, days_to_harvest: 0, is_dead: false, watered: true, harvestable: true, sprinkler_covered: false },
+                CropStatus { item_id: 304, name: "辣椒".into(), x: 61.0, y: 26.0, current_phase: 5, total_phases: 6, days_to_harvest: 0, is_dead: false, watered: false, harvestable: true, sprinkler_covered: false },
             ],
             friendships: vec![
                 Friendship { npc: "Pierre".into(), points: 618 },
@@ -158,6 +186,13 @@ impl GameState {
                 BuildingInfo { kind: "Barn".into(), name: "畜棚".into(), count: 1 },
             ],
             junimo_huts: 0,
+            sprinklers: 0,
+            fruit_trees: vec![
+                FruitTreeStatus { name: "苹果".into(), count: 1, mature: 1, ready: 0 },
+            ],
+            trees: vec![
+                TreeStatus { name: "橡树".into(), count: 3, mature: 2 },
+            ],
         })
     }
 }
