@@ -81,13 +81,8 @@ impl KnowledgeBase {
     }
 
     fn load_seed_data_if_empty(&self) -> anyhow::Result<()> {
-        let count: i64 = self.conn.query_row(
-            "SELECT COUNT(*) FROM crops", [], |row| row.get(0)
-        )?;
-        if count > 0 {
-            return Ok(());
-        }
-
+        // 每次启动重导入种子数据（INSERT OR REPLACE 幂等，
+        // 保证 crops.json 扩充后老用户的 knowledge.db 也能拿到新作物）
         let crops_text = std::fs::read_to_string("data/crops.json")
             .unwrap_or_else(|_| include_str!("../data/crops.json").to_string());
         let npcs_text = std::fs::read_to_string("data/npcs.json")

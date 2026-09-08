@@ -58,6 +58,7 @@ fn main() {
             commands::get_usage_detail,
             commands::get_config,
             commands::update_config,
+            commands::test_api,
             commands::get_save_status,
             commands::parse_save,
             commands::save_session,

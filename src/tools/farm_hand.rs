@@ -264,13 +264,16 @@ fn harvest_all(
         if !seg.starts_with(HOE_DIRT_OPEN) {
             continue;
         }
-        if !seg.contains("<fullGrown>true</fullGrown>") || seg.contains("<dead>true</dead>") {
+        // 1.6 收获规则: fullGrown=true 且 dayOfCurrentPhase < 0 才是真正可收获
+        let fg = seg.contains("<fullGrown>true</fullGrown>");
+        let dop = extract_int(seg, "dayOfCurrentPhase").unwrap_or(i32::MAX);
+        if !fg || dop >= 0 || seg.contains("<dead>true</dead>") {
             continue;
         }
         let Some(crop_id) = extract_int(seg, "indexOfHarvest") else { continue };
         let name = crop_id_to_name(crop_id);
         let price = kb.get_crop_price(&name).unwrap_or(0);
-        let regrows = kb.get_crop_info(&name).map(|c| c.regrows).unwrap_or(false);
+        let info = kb.get_crop_info(&name);
 
         total_income += price;
         total_count += 1;
@@ -279,24 +282,14 @@ fn harvest_all(
 
         let block = seg.clone();
         let mut modified = block.clone();
-        if regrows {
-            modified = modified.replace("<fullGrown>true</fullGrown>", "<fullGrown>false</fullGrown>");
-            if let Some(dop) = extract_int(&block, "dayOfCurrentPhase") {
-                modified = modified.replace(
-                    &format!("<dayOfCurrentPhase>{}</dayOfCurrentPhase>", dop),
-                    "<dayOfCurrentPhase>0</dayOfCurrentPhase>",
-                );
-            }
-            if let Some(cur) = extract_int(&block, "currentPhase") {
-                let phases = extract_phase_days(&block);
-                let reset = phases.len().saturating_sub(2) as i32;
-                if cur > reset && cur == phases.len() as i32 - 1 {
-                    modified = modified.replace(
-                        &format!("<currentPhase>{}</currentPhase>", cur),
-                        &format!("<currentPhase>{}</currentPhase>", reset),
-                    );
-                }
-            }
+        if info.as_ref().map(|c| c.regrows).unwrap_or(false) {
+            // 1.6 再生: 保留在收获槽位(currentPhase 不动)，fullGrown 保持 true，
+            // dayOfCurrentPhase 重置为再生天数（每夜 -1 倒计时，减到 -1 可再收获）
+            let regrow_days = regrow_days_for(&name);
+            modified = modified.replace(
+                &format!("<dayOfCurrentPhase>{}</dayOfCurrentPhase>", dop),
+                &format!("<dayOfCurrentPhase>{}</dayOfCurrentPhase>", regrow_days),
+            );
         } else if let Some((cs, ce)) = block.find("<crop>")
             .and_then(|s| block.find("</crop>").map(|e| (s, e + "</crop>".len())))
             .filter(|(s, e)| s < e)
@@ -344,6 +337,27 @@ fn extract_int(block: &str, tag: &str) -> Option<i32> {
     let after = &block[p + open.len()..];
     let e = after.find(&close)?;
     after[..e].trim().parse().ok()
+}
+
+/// 再生作物的再生天数（官方 Data/Crops 值）
+fn regrow_days_for(name: &str) -> i32 {
+    match name {
+        "青豆" => 3,
+        "草莓" => 4,
+        "辣椒" => 3,
+        "啤酒花" => 3,
+        "番茄" => 4,
+        "蓝莓" => 4,
+        "西葫芦" => 3,
+        "玉米" => 4,
+        "茄子" => 5,
+        "蔓越莓" => 5,
+        "葡萄" => 3,
+        "咖啡豆" => 2,
+        "远古水果" => 7,
+        "茶叶" => 5,
+        _ => 4,
+    }
 }
 
 fn extract_phase_days(block: &str) -> Vec<i32> {

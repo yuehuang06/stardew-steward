@@ -223,13 +223,13 @@ pub fn save(config: &Config) -> anyhow::Result<()> {
 fn default_config(save_path: &str) -> Config {
     Config {
         model: ModelConfig {
-            endpoint: "https://lab.cs.tsinghua.edu.cn/ai-platform/api/v1".into(),
+            endpoint: "https://api.openai.com/v1".into(),
             api_key: String::new(),
-            model: "glm-5.2".into(),
+            model: "gpt-4o-mini".into(),
             context_length: 8192,
             thinking_mode: false,
-            price_input: 0.0014,
-            price_output: 0.0028,
+            price_input: 0.0011,
+            price_output: 0.0042,
         },
         save: SaveConfig {
             path: save_path.to_string(),
@@ -242,4 +242,48 @@ fn default_config(save_path: &str) -> Config {
             db_path: "knowledge.db".into(),
         },
     }
+}
+
+/// 测试 LLM API 连通性（设置面板的"测试连接"按钮）
+pub async fn test_connection(endpoint: &str, api_key: &str, model: &str) -> anyhow::Result<String> {
+    if api_key.is_empty() {
+        anyhow::bail!("API Key 为空，请先填写");
+    }
+    let url = format!("{}/chat/completions", endpoint.trim_end_matches('/'));
+    let client = reqwest::Client::new();
+    let body = serde_json::json!({
+        "model": model,
+        "messages": [{"role": "user", "content": "回复OK"}],
+        "max_tokens": 8,
+    });
+    let resp = client
+        .post(&url)
+        .header("Authorization", format!("Bearer {}", api_key))
+        .header("Content-Type", "application/json")
+        .json(&body)
+        .timeout(std::time::Duration::from_secs(20))
+        .send()
+        .await
+        .map_err(|e| anyhow::anyhow!("请求失败: {}", e))?;
+
+    let status = resp.status();
+    let text = resp.text().await.unwrap_or_default();
+    if !status.is_success() {
+        let msg = serde_json::from_str::<serde_json::Value>(&text)
+            .ok()
+            .and_then(|v| v["error"]["message"].as_str().map(String::from))
+            .unwrap_or_else(|| text.chars().take(200).collect());
+        anyhow::bail!("HTTP {}: {}", status.as_u16(), msg);
+    }
+    let v: serde_json::Value = serde_json::from_str(&text)
+        .map_err(|e| anyhow::anyhow!("响应解析失败: {}", e))?;
+    let reply = v["choices"][0]["message"]["content"]
+        .as_str()
+        .unwrap_or("")
+        .trim()
+        .to_string();
+    let usage = &v["usage"];
+    let tokens = usage["prompt_tokens"].as_u64().unwrap_or(0)
+        + usage["completion_tokens"].as_u64().unwrap_or(0);
+    Ok(format!("连接成功！模型回复「{}」（消耗 {} tok）", reply, tokens))
 }

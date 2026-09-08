@@ -449,6 +449,8 @@ impl Agent {
         if let Some(prompt) = usage["prompt_tokens"].as_u64() {
             if let Some(completion) = usage["completion_tokens"].as_u64() {
                 self.usage.record(prompt, completion);
+                // 每步实时上报用量
+                self.reporter.on_usage(&self.usage_brief());
                 if self.usage.over_budget() {
                     anyhow::bail!("Token 预算已用尽: {}", self.usage.summary());
                 }

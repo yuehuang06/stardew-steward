@@ -9,12 +9,15 @@ struct CompactState {
     weather: String,
     luck: String,
     skills: String,
+    watered_summary: String,
     crop_summary: Vec<CropSummary>,
     top_friendships: Vec<String>,
     inventory: Vec<String>,
     chests: Vec<String>,
     #[serde(skip_serializing_if = "Vec::is_empty")]
     quests: Vec<String>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    buildings: Vec<String>,
 }
 
 #[derive(Serialize)]
@@ -22,6 +25,7 @@ struct CropSummary {
     name: String,
     count: u32,
     harvestable: u32,
+    unwatered: u32,
     days_to_harvest: Vec<i32>,
 }
 
@@ -32,24 +36,51 @@ pub fn execute(path: &str) -> anyhow::Result<String> {
     let state = crate::parser::parse(std::path::Path::new(path))?;
 
     let mut groups: HashMap<String, CropSummary> = HashMap::new();
+    let mut total_living = 0u32;
+    let mut total_unwatered = 0u32;
     for crop in &state.crops {
+        if crop.is_dead {
+            continue; // 枯死的作物不进汇总（换季后遗留的死株没有行动价值）
+        }
         let entry = groups.entry(crop.name.clone()).or_insert(CropSummary {
             name: crop.name.clone(),
             count: 0,
             harvestable: 0,
+            unwatered: 0,
             days_to_harvest: Vec::new(),
         });
         entry.count += 1;
-        if !crop.is_dead {
-            entry.days_to_harvest.push(crop.days_to_harvest);
-            if crop.days_to_harvest == 0 {
-                entry.harvestable += 1;
-            }
+        total_living += 1;
+        if !crop.watered {
+            total_unwatered += 1;
+            entry.unwatered += 1;
+        }
+        entry.days_to_harvest.push(crop.days_to_harvest);
+        if crop.harvestable {
+            entry.harvestable += 1;
         }
     }
 
     let mut crop_summary: Vec<_> = groups.into_values().collect();
     crop_summary.sort_by(|a, b| b.harvestable.cmp(&a.harvestable));
+
+    let watered_summary = if state.junimo_huts > 0 {
+        format!(
+            "已浇水{}/{}株（农场有{}个Junimo小屋，Junimo每天自动浇水，通常无需手动浇）",
+            total_living.saturating_sub(total_unwatered), total_living, state.junimo_huts
+        )
+    } else if state.weather.is_raining {
+        format!("今天下雨，{}株作物自动浇水", total_living)
+    } else {
+        format!(
+            "已浇水{}/{}株，未浇{}株",
+            total_living.saturating_sub(total_unwatered), total_living, total_unwatered
+        )
+    };
+
+    let building_list: Vec<String> = state.buildings.iter()
+        .map(|b| format!("{}×{}", b.name, b.count))
+        .collect();
 
     let top_friendships: Vec<String> = state.friendships.iter()
         .take(10)
@@ -117,12 +148,14 @@ pub fn execute(path: &str) -> anyhow::Result<String> {
             state.skills.foraging, state.skills.fishing,
         ),
         crop_summary,
+        watered_summary,
         top_friendships,
         inventory: state.inventory.iter()
             .map(|i| format!("{}×{}", i.name, i.count))
             .collect(),
         chests: chest_summary,
         quests: quest_list,
+        buildings: building_list,
     };
 
     Ok(serde_json::to_string_pretty(&compact)?)

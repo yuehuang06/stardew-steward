@@ -27,4 +27,8 @@ impl ProgressReporter for TauriReporter {
     fn on_error(&self, message: &str) {
         let _ = self.app.emit("agent-error", message);
     }
+
+    fn on_usage(&self, brief: &str) {
+        let _ = self.app.emit("agent-usage", brief);
+    }
 }

@@ -78,6 +78,8 @@ fn parse_xml(xml: &str) -> anyhow::Result<GameState> {
 
     let quests = parse_quests(&player);
 
+    let (buildings, junimo_huts) = parse_buildings(&root);
+
     Ok(GameState {
         money,
         date: GameDate { year, season, day },
@@ -89,7 +91,83 @@ fn parse_xml(xml: &str) -> anyhow::Result<GameState> {
         inventory,
         chests,
         quests,
+        buildings,
+        junimo_huts,
     })
+}
+
+/// 建筑类型 → 中文名（含功能提示）
+pub fn building_type_cn(kind: &str) -> String {
+    match kind {
+        "Barn" => "畜棚".into(),
+        "Big Barn" => "大畜棚".into(),
+        "Deluxe Barn" => "高级畜棚".into(),
+        "Coop" => "鸡舍".into(),
+        "Big Coop" => "大鸡舍".into(),
+        "Deluxe Coop" => "高级鸡舍".into(),
+        "Silo" => "筒仓（储存干草）".into(),
+        "Shed" => "小屋（储物）".into(),
+        "Big Shed" => "大棚（储物）".into(),
+        "Mill" => "磨坊（产面粉/糖）".into(),
+        "Junimo Hut" => "Junimo小屋（自动浇水+收获）".into(),
+        "Stable" => "马厩".into(),
+        "Greenhouse" => "温室".into(),
+        "Slime Hutch" => "史莱姆屋".into(),
+        "Farmhouse" => "农舍".into(),
+        "Cabin" => "小木屋".into(),
+        "Well" => "水井".into(),
+        "Shipping Bin" => "出货箱".into(),
+        "Gold Clock" | "Island Obelisk" | "Desert Obelisk" | "Water Obelisk" | "Earth Obelisk" => {
+            format!("{}（图腾柱）", kind.replace(" Obelisk", "传送塔"))
+        }
+        other => other.to_string(),
+    }
+}
+
+fn parse_buildings(root: &roxmltree::Node) -> (Vec<BuildingInfo>, u32) {
+    let mut map: std::collections::BTreeMap<String, u32> = std::collections::BTreeMap::new();
+    let mut junimo_huts = 0u32;
+
+    // 建筑在 Farm location 的 <buildings> 下
+    if let Some(locations) = root.children().find(|n| n.has_tag_name("locations")) {
+        for loc in locations.children().filter(|n| n.is_element()) {
+            let name = loc.children()
+                .find(|n| n.has_tag_name("name"))
+                .and_then(|n| n.text())
+                .unwrap_or("")
+                .trim()
+                .to_string();
+            if name != "Farm" {
+                continue;
+            }
+            if let Some(bldgs) = loc.children().find(|n| n.has_tag_name("buildings")) {
+                for b in bldgs.children().filter(|n| n.has_tag_name("Building")) {
+                    let kind = b.children()
+                        .find(|n| n.has_tag_name("buildingType"))
+                        .and_then(|n| n.text())
+                        .unwrap_or("")
+                        .trim()
+                        .to_string();
+                    if kind.is_empty() {
+                        continue;
+                    }
+                    *map.entry(kind.clone()).or_insert(0) += 1;
+                    if kind == "Junimo Hut" {
+                        junimo_huts += 1;
+                    }
+                }
+            }
+        }
+    }
+
+    let buildings = map.into_iter()
+        .map(|(kind, count)| BuildingInfo {
+            name: building_type_cn(&kind),
+            kind,
+            count,
+        })
+        .collect();
+    (buildings, junimo_huts)
 }
 
 fn parse_skills(player: &roxmltree::Node) -> Skills {
@@ -269,79 +347,103 @@ fn parse_chests(root: &roxmltree::Node) -> Vec<Chest> {
             .trim()
             .to_string();
 
-        let objects = match loc.children().find(|n| n.has_tag_name("objects")) {
-            Some(o) => o,
-            None => continue,
-        };
+        // 普通地点（Farm/Greenhouse/矿洞等）里的木箱
+        if let Some(objects) = loc.children().find(|n| n.has_tag_name("objects")) {
+            extract_chests_from_objects(&objects, &loc_name, &mut result);
+        }
 
-        for item in objects.children().filter(|n| n.has_tag_name("item")) {
-            let val = match item.children().find(|n| n.has_tag_name("value")) {
-                Some(v) => v,
-                None => continue,
-            };
-
-            for obj in val.children().filter(|n| n.is_element()) {
-                let obj_name = obj.children()
-                    .find(|n| n.has_tag_name("name"))
-                    .and_then(|n| n.text())
-                    .unwrap_or("")
-                    .trim()
-                    .to_string();
-
-                if obj_name != "Chest" {
-                    continue;
-                }
-
-                let x = item.children()
-                    .find(|n| n.has_tag_name("key"))
-                    .and_then(|k| k.children().find(|n| n.has_tag_name("Vector2")))
-                    .and_then(|v| v.children().find(|n| n.has_tag_name("X")))
-                    .and_then(|x| x.text())
-                    .and_then(|t| t.trim().parse::<f32>().ok())
-                    .unwrap_or(0.0);
-
-                let y = item.children()
-                    .find(|n| n.has_tag_name("key"))
-                    .and_then(|k| k.children().find(|n| n.has_tag_name("Vector2")))
-                    .and_then(|v| v.children().find(|n| n.has_tag_name("Y")))
-                    .and_then(|y| y.text())
-                    .and_then(|t| t.trim().parse::<f32>().ok())
-                    .unwrap_or(0.0);
-
-                let mut chest_items = Vec::new();
-                if let Some(items) = obj.children().find(|n| n.has_tag_name("items")) {
-                    for ci in items.children().filter(|n| n.is_element()) {
-                        let name = ci.children()
-                            .find(|n| n.has_tag_name("name"))
-                            .and_then(|n| n.text())
-                            .unwrap_or("")
-                            .trim()
-                            .to_string();
-
-                        let stack = ci.children()
-                            .find(|n| n.has_tag_name("stack"))
-                            .and_then(|n| n.text())
-                            .and_then(|t| t.trim().parse::<u32>().ok())
-                            .unwrap_or(1);
-
-                        if !name.is_empty() && name != "null" {
-                            chest_items.push(InventoryItem { name, count: stack });
+        // 建筑内部（小屋/鸡舍/畜棚的 indoors）的木箱
+        if loc_name == "Farm" {
+            if let Some(bldgs) = loc.children().find(|n| n.has_tag_name("buildings")) {
+                for b in bldgs.children().filter(|n| n.has_tag_name("Building")) {
+                    let kind = b.children()
+                        .find(|n| n.has_tag_name("buildingType"))
+                        .and_then(|n| n.text())
+                        .unwrap_or("")
+                        .trim()
+                        .to_string();
+                    let label = building_type_cn(&kind);
+                    if let Some(indoors) = b.children().find(|n| n.has_tag_name("indoors")) {
+                        for room in indoors.children().filter(|n| n.is_element()) {
+                            if let Some(objects) = room.children().find(|n| n.has_tag_name("objects")) {
+                                extract_chests_from_objects(&objects, &label, &mut result);
+                            }
                         }
                     }
-                }
-
-                if !chest_items.is_empty() {
-                    result.push(Chest {
-                        location: loc_name.clone(),
-                        x, y,
-                        items: chest_items,
-                    });
                 }
             }
         }
     }
 
     result
+}
+
+fn extract_chests_from_objects(objects: &roxmltree::Node, loc_label: &str, result: &mut Vec<Chest>) {
+    for item in objects.children().filter(|n| n.has_tag_name("item")) {
+        let val = match item.children().find(|n| n.has_tag_name("value")) {
+            Some(v) => v,
+            None => continue,
+        };
+
+        for obj in val.children().filter(|n| n.is_element()) {
+            let obj_name = obj.children()
+                .find(|n| n.has_tag_name("name"))
+                .and_then(|n| n.text())
+                .unwrap_or("")
+                .trim()
+                .to_string();
+
+            if obj_name != "Chest" {
+                continue;
+            }
+
+            let x = item.children()
+                .find(|n| n.has_tag_name("key"))
+                .and_then(|k| k.children().find(|n| n.has_tag_name("Vector2")))
+                .and_then(|v| v.children().find(|n| n.has_tag_name("X")))
+                .and_then(|x| x.text())
+                .and_then(|t| t.trim().parse::<f32>().ok())
+                .unwrap_or(0.0);
+
+            let y = item.children()
+                .find(|n| n.has_tag_name("key"))
+                .and_then(|k| k.children().find(|n| n.has_tag_name("Vector2")))
+                .and_then(|v| v.children().find(|n| n.has_tag_name("Y")))
+                .and_then(|y| y.text())
+                .and_then(|t| t.trim().parse::<f32>().ok())
+                .unwrap_or(0.0);
+
+            let mut chest_items = Vec::new();
+            if let Some(items) = obj.children().find(|n| n.has_tag_name("items")) {
+                for ci in items.children().filter(|n| n.is_element()) {
+                    let name = ci.children()
+                        .find(|n| n.has_tag_name("name"))
+                        .and_then(|n| n.text())
+                        .unwrap_or("")
+                        .trim()
+                        .to_string();
+
+                    let stack = ci.children()
+                        .find(|n| n.has_tag_name("stack"))
+                        .and_then(|n| n.text())
+                        .and_then(|t| t.trim().parse::<u32>().ok())
+                        .unwrap_or(1);
+
+                    if !name.is_empty() && name != "null" {
+                        chest_items.push(InventoryItem { name, count: stack });
+                    }
+                }
+            }
+
+            if !chest_items.is_empty() {
+                result.push(Chest {
+                    location: loc_label.to_string(),
+                    x, y,
+                    items: chest_items,
+                });
+            }
+        }
+    }
 }
 
 fn parse_crops(root: &roxmltree::Node) -> Vec<CropStatus> {
@@ -360,7 +462,7 @@ fn parse_crops(root: &roxmltree::Node) -> Vec<CropStatus> {
             .trim()
             .to_string();
 
-        if name != "Farm" && name != "Greenhouse" {
+        if name != "Farm" && name != "Greenhouse" && name != "IslandWest" {
             continue;
         }
 
@@ -389,11 +491,22 @@ fn extract_crop_from_terrain(item: &roxmltree::Node) -> Option<CropStatus> {
         return None;
     }
 
-    let crop = terrain.children().find(|n| n.has_tag_name("crop"))?;
-    let idx = crop.children()
-        .find(|n| n.has_tag_name("indexOfHarvest"))
+    // 浇水状态: HoeDirt 的 state 字段 bit 0
+    let watered = terrain.children()
+        .find(|n| n.has_tag_name("state"))
         .and_then(|n| n.text())
-        .and_then(|t| t.trim().parse::<i32>().ok())?;
+        .and_then(|t| t.trim().parse::<u32>().ok())
+        .map(|s| s & 1 == 1)
+        .unwrap_or(false);
+
+    let crop = terrain.children().find(|n| n.has_tag_name("crop"))?;
+
+    // 1.6 野生种子作物: forageCrop=true，无 indexOfHarvest
+    let is_forage = crop.children()
+        .find(|n| n.has_tag_name("forageCrop"))
+        .and_then(|n| n.text())
+        .map(|t| t.trim() == "true")
+        .unwrap_or(false);
 
     let x = item.children()
         .find(|n| n.has_tag_name("key"))
@@ -445,70 +558,114 @@ fn extract_crop_from_terrain(item: &roxmltree::Node) -> Option<CropStatus> {
         .unwrap_or_default();
 
     let total_phases = phase_days.len() as i32;
+    // 99999 收获槽位（最后一个 phaseDays 条目）
+    let last_phase = total_phases.saturating_sub(1);
+    let in_harvest_phase = current_phase >= last_phase;
+
+    // 1.6 收获规则（经实测存档验证）:
+    // - fullGrown=true 表示已成熟过/已收获过
+    // - 收获后 dayOfCurrentPhase 重置为再生天数，每夜 -1，减到负数后可再收获
+    // - 从未收获的成熟作物: fullGrown=true 且 dop<0（首次成熟时置为负值）
+    // - fullGrown=false 且在收获槽位 = 尚未真正成熟（dop 计数中）
+    let harvestable = !is_dead && in_harvest_phase && full_grown && day_of_phase < 0;
 
     let days_to_harvest = if is_dead {
         -1
-    } else if full_grown || current_phase >= total_phases.saturating_sub(1) {
+    } else if harvestable {
         0
+    } else if in_harvest_phase {
+        if full_grown {
+            // 再生倒计时: dop 每夜 -1，到 -1 后可收获 → 还需 dop+1 晚
+            day_of_phase + 1
+        } else {
+            // 未成熟但已进入末位阶段（少见状态），按至少 1 天估
+            1
+        }
     } else {
         let remaining = phase_days.get(current_phase as usize)
             .map(|d| d - day_of_phase)
             .unwrap_or(0);
-        // 只累加到倒数第二阶段，排除最后的 99999（成熟阶段）
+        // 只累加到收获槽位之前，排除最后的 99999
         let future: i32 = phase_days
-            .get((current_phase + 1) as usize..(total_phases - 1).max(1) as usize)
+            .get((current_phase + 1) as usize..last_phase.max(1) as usize)
             .map(|slice| slice.iter().sum())
             .unwrap_or(0);
         remaining + future
     };
 
+    let (item_id, name) = if is_forage {
+        (-1, "野生作物（野种）".to_string())
+    } else {
+        let idx = crop.children()
+            .find(|n| n.has_tag_name("indexOfHarvest"))
+            .and_then(|n| n.text())
+            .and_then(|t| t.trim().parse::<i32>().ok())?;
+        (idx, crop_id_to_name(idx))
+    };
+
     Some(CropStatus {
-        item_id: idx,
-        name: crop_id_to_name(idx),
+        item_id,
+        name,
         x, y,
         current_phase,
         total_phases,
         days_to_harvest,
         is_dead,
+        watered,
+        harvestable,
     })
 }
 
+/// 作物 ID → 中文名
+/// 映射经 SDV 1.6.15 实际存档验证（seedIndex + phaseDays + 官方 Data/Crops 交叉对照）
 pub fn crop_id_to_name(id: i32) -> String {
     match id {
-        24 => "防风草".into(),
-        188 => "花椰菜".into(),
-        190 => "马铃薯".into(),
-        192 => "花椰菜".into(),
-        252 => "大黄".into(),
+        // 春季
+        24 => "防风草".into(),       // seed 472
+        188 => "青豆".into(),        // seed 473
+        190 => "花椰菜".into(),      // seed 474
+        192 => "马铃薯".into(),      // seed 475
+        242 => "大蒜".into(),
+        248 => "甘蓝".into(),        // seed 476
+        250 => "蓝爵士".into(),      // seed 477
+        252 => "大黄".into(),        // seed 478, 13天
+        271 => "未碾稻米".into(),    // seed 273 (Rice Shoot)
+        // 夏季
         254 => "甜瓜".into(),
         256 => "番茄".into(),
-        257 => "辣椒".into(),
         258 => "蓝莓".into(),
-        260 => "啤酒花".into(),
+        260 => "辣椒".into(),        // seed 482, 5天+3再生
         262 => "小麦".into(),
         264 => "萝卜".into(),
-        266 => "茄子".into(),
-        270 => "南瓜".into(),
-        272 => "玉米".into(),
-        276 => "茄子".into(),
-        280 => "山药".into(),
-        281 => "甜瓜".into(),
-        282 => "蔓越莓".into(),
-        283 => "向日葵".into(),
-        284 => "红叶卷心菜".into(),
-        300 => "苋菜".into(),
-        304 => "辣椒".into(),
+        266 => "红叶卷心菜".into(),
+        268 => "杨桃".into(),        // seed 486, 13天
+        304 => "啤酒花".into(),      // 官方经典 ID
         376 => "罂粟".into(),
-        396 => "野种".into(),
-        416 => "蓝莓".into(),
-        417 => "玉米".into(),
-        418 => "茄子".into(),
-        421 => "啤酒花".into(),
+        400 => "草莓".into(),        // seed 745
+        593 => "夏季闪光花".into(),
+        834 => "西葫芦".into(),      // 1.6
+        // 秋季
+        270 => "玉米".into(),        // seed 487, 14天+4再生
+        272 => "茄子".into(),        // seed 488, 5天+5再生
+        274 => "洋蓟".into(),        // seed 489, 8天
+        276 => "南瓜".into(),        // seed 490, 13天
+        278 => "小白菜".into(),
+        280 => "山药".into(),        // seed 492, 10天
+        282 => "蔓越莓".into(),      // seed 493, 7天+5再生
+        284 => "甜菜".into(),
+        299 | 300 => "苋菜".into(),
+        398 => "葡萄".into(),        // seed 301 (Grape Starter), 10天
+        421 => "向日葵".into(),      // seed 431, 8天
+        595 => "玫瑰仙子".into(),    // seed 425, 12天
+        // 冬季
+        597 => "霜瓜".into(),        // 1.6 Powdermelon
+        // 特殊
         433 => "咖啡豆".into(),
+        454 => "远古水果".into(),    // 28天+7再生
         591 => "甜宝石浆果".into(),
-        593 => "茶叶".into(),
-        833 => "姜".into(),
-        834 => "茶叶".into(),
+        815 => "茶叶".into(),
+        830 => "芋头".into(),        // 1.6 Taro
+        833 => "胡萝卜".into(),      // 1.6 Carrot
         _ => format!("未知作物#{}", id),
     }
 }

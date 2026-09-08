@@ -33,6 +33,7 @@ clap = { version = "4", features = ["derive"] }
 rustyline = "14"
 ratatui = "0.29"
 crossterm = "0.28"
+termimad = "0.31"
 
 # 文件监听
 notify = "7"

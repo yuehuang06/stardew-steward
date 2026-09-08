@@ -30,5 +30,11 @@ frontend/dist/
 src-tauri/target/
 src-tauri/gen/
 
-# 允许 dist/ 下的预编译产物
+# 允许根目录 dist/ 下的预编译产物（不匹配 frontend/dist 等子目录）
 !dist/
+!dist/**
+frontend/dist/
+
+# 测试用他人存档（不提交）
+Anvils_420041216/
+Zone.Identifier

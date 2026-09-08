@@ -60,10 +60,12 @@ pub fn print_response(text: &str) {
 
     match serde_json::from_str::<stardew_steward::solver::schedule::DailySchedule>(json_str) {
         Ok(schedule) => {
-            println!("{}", stardew_steward::solver::schedule::render(&schedule));
+            let md = stardew_steward::solver::schedule::render(&schedule);
+            termimad::print_text(&md);
         }
         Err(_) => {
-            println!("{}", text);
+            // 普通回答也走 termimad 渲染（表格/加粗/列表更美观）
+            termimad::print_text(text);
         }
     }
     println!();

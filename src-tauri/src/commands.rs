@@ -159,6 +159,26 @@ pub async fn interrupt(state: State<'_, AppState>) -> Result<(), String> {
 }
 
 #[tauri::command]
+pub async fn test_api(
+    state: State<'_, AppState>,
+    endpoint: String,
+    #[allow(non_snake_case)]
+    apiKey: String,
+    model: String,
+) -> Result<String, String> {
+    // key 为空或掩码时，回退到已保存的配置 key
+    let key = if apiKey.is_empty() || apiKey.contains("...") {
+        let agent = state.agent.lock().await;
+        agent.config().model.api_key.clone()
+    } else {
+        apiKey
+    };
+    config::test_connection(&endpoint, &key, &model)
+        .await
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
 pub async fn toggle_window_width(window: tauri::WebviewWindow) -> Result<bool, String> {
     let scale = window.scale_factor().unwrap_or(1.0);
     let cur = window.inner_size().map_err(|e| e.to_string())?;

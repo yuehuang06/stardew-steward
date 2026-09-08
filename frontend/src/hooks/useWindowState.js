@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { invoke } from "@tauri-apps/api/core";
+import { listen } from "@tauri-apps/api/event";
 
 export function useWindowState() {
   const [expanded, setExpanded] = useState(false);
@@ -49,6 +50,17 @@ export function useUsage() {
     } catch (e) {
       console.error("get usage failed:", e);
     }
+  }, []);
+
+  // 实时监听每步 LLM 调用的用量事件
+  useEffect(() => {
+    let unlisten;
+    listen("agent-usage", (e) => setBrief(e.payload))
+      .then((fn) => (unlisten = fn))
+      .catch(() => {});
+    return () => {
+      if (unlisten) unlisten();
+    };
   }, []);
 
   return { brief, refresh };

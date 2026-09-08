@@ -1,7 +1,28 @@
 import { useState, useEffect } from "react";
+import { invoke } from "@tauri-apps/api/core";
 
 export function SettingsPanel({ config, usage, saving, onUpdate, onClose }) {
   const [form, setForm] = useState(null);
+  const [testing, setTesting] = useState(false);
+  const [testResult, setTestResult] = useState(null);
+
+  const handleTest = async () => {
+    if (!form) return;
+    setTesting(true);
+    setTestResult(null);
+    try {
+      const r = await invoke("test_api", {
+        endpoint: form.endpoint,
+        apiKey: form.api_key,
+        model: form.model,
+      });
+      setTestResult({ ok: true, msg: r });
+    } catch (e) {
+      setTestResult({ ok: false, msg: String(e) });
+    } finally {
+      setTesting(false);
+    }
+  };
 
   useEffect(() => {
     if (config) {
@@ -170,6 +191,30 @@ export function SettingsPanel({ config, usage, saving, onUpdate, onClose }) {
             value={form.token_budget}
             onChange={(e) => set("token_budget", e.target.value)}
           />
+
+          <button
+            className="sd-btn"
+            style={{ width: "100%", marginBottom: "4px" }}
+            onClick={handleTest}
+            disabled={testing}
+          >
+            {testing ? "测试中..." : "测试 API 连接"}
+          </button>
+          {testResult && (
+            <div
+              style={{
+                fontSize: "11px",
+                padding: "3px 6px",
+                marginBottom: "8px",
+                wordBreak: "break-word",
+                border: "1px solid var(--sd-wood-darker)",
+                background: testResult.ok ? "var(--sd-green)" : "var(--sd-red)",
+                color: "var(--sd-cream)",
+              }}
+            >
+              {testResult.msg}
+            </div>
+          )}
 
           <button
             className="sd-btn sd-btn-green"

@@ -38,9 +38,8 @@ export function InputBar({ onSend, onInterrupt, loading, usageBrief, sessionUsag
             lang="zh-CN"
             className="sd-input"
             style={{ flex: 1 }}
-            placeholder="问点什么..."
+            placeholder={loading ? "agent 回答中…输入将排队" : "问点什么..."}
             onKeyDown={handleKeyDown}
-            disabled={loading}
           />
           {loading ? (
             <button

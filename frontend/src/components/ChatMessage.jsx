@@ -14,6 +14,7 @@ export function ChatMessage({ msg }) {
         display: "flex",
         justifyContent: isUser ? "flex-end" : "flex-start",
         marginBottom: "8px",
+        opacity: msg.queued ? 0.55 : 1,
       }}
     >
       <div
@@ -28,7 +29,7 @@ export function ChatMessage({ msg }) {
         {schedule ? (
           <ScheduleCard schedule={schedule} />
         ) : isUser ? (
-          msg.text
+          msg.queued ? `${msg.text}（排队中…）` : msg.text
         ) : typing ? (
           <span>{msg.text}<span className="sd-blink">_</span></span>
         ) : (
