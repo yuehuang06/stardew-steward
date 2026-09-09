@@ -38,3 +38,6 @@ frontend/dist/
 # 测试用他人存档（不提交）
 Anvils_420041216/
 Zone.Identifier
+
+# 开发进度笔记（内部，不公开）
+PROGRESS.md
