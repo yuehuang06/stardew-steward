@@ -253,10 +253,14 @@ impl Agent {
             }
             let flag = self.interrupt_flag.clone();
             let step = match flag {
-                Some(f) => tokio::select! {
-                    r = self.call_llm() => LlmStep::Done(r),
-                    _ = poll_flag(f) => LlmStep::Stop,
-                },
+                Some(f) => {
+                    // 克隆 reporter 给心跳协程，避免与 call_llm 的 &mut self 借用冲突
+                    let reporter = Arc::clone(&self.reporter);
+                    tokio::select! {
+                        r = self.call_llm() => LlmStep::Done(r),
+                        _ = poll_flag(f, reporter) => LlmStep::Stop,
+                    }
+                }
                 None => LlmStep::Done(self.call_llm().await),
             };
             self.reporter.on_done();
@@ -530,8 +534,8 @@ impl Agent {
     }
 }
 
-/// 从可能包含 ```json ... ``` 的文本中提取 JSON
-fn extract_json(text: &str) -> Option<&str> {
+/// 从可能包含 ```json ... ``` 的文本中提取 JSON（围栏优先，退化为首个 { 到末个 }）
+pub fn extract_json(text: &str) -> Option<&str> {
     if let Some(start) = text.find("```json") {
         let rest = &text[start + 7..];
         if let Some(end) = rest.find("```") {
@@ -557,13 +561,23 @@ fn strip_reminder(content: &str) -> &str {
     content
 }
 
-/// 轮询打断标记，置位时返回（用于 select! 打断 LLM 调用）
-async fn poll_flag(flag: Arc<AtomicBool>) {
+/// 轮询打断标记，置位时返回（用于 select! 打断 LLM 调用）。
+/// 长时间无响应时每 30 秒发一次心跳，避免 CLI/GUI 看起来像卡死
+async fn poll_flag(flag: Arc<AtomicBool>, reporter: Arc<dyn ProgressReporter>) {
+    let mut waited_secs: u64 = 0;
     loop {
         if flag.load(Ordering::SeqCst) {
             return;
         }
-        tokio::time::sleep(std::time::Duration::from_millis(100)).await;
+        tokio::time::sleep(std::time::Duration::from_millis(500)).await;
+        waited_secs += 1; // 睡 0.5s 计 1 次太粗，直接按半秒累计换算
+        if waited_secs % 60 == 0 {
+            // 每 30 秒（60 个半秒 tick）报告一次
+            reporter.on_thinking(&format!(
+                "模型仍在生成，已等待 {} 秒（Ctrl-C 可打断）...",
+                waited_secs / 2
+            ));
+        }
     }
 }
 
