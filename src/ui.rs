@@ -24,6 +24,10 @@ impl ProgressReporter for CliReporter {
     fn on_error(&self, message: &str) {
         println!("  ✗ {}", message);
     }
+
+    fn on_heartbeat(&self, message: &str) {
+        println!("  ⏳ {}", message);
+    }
 }
 
 pub fn print_welcome() {

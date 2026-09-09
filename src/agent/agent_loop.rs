@@ -562,20 +562,20 @@ fn strip_reminder(content: &str) -> &str {
 }
 
 /// 轮询打断标记，置位时返回（用于 select! 打断 LLM 调用）。
-/// 长时间无响应时每 30 秒发一次心跳，避免 CLI/GUI 看起来像卡死
+/// 长时间无响应时每 30 秒发一次心跳（CLI 打印防呆；GUI 不显示，保持原有进度步骤闪烁）
 async fn poll_flag(flag: Arc<AtomicBool>, reporter: Arc<dyn ProgressReporter>) {
-    let mut waited_secs: u64 = 0;
+    let mut ticks: u64 = 0;
     loop {
         if flag.load(Ordering::SeqCst) {
             return;
         }
         tokio::time::sleep(std::time::Duration::from_millis(500)).await;
-        waited_secs += 1; // 睡 0.5s 计 1 次太粗，直接按半秒累计换算
-        if waited_secs % 60 == 0 {
+        ticks += 1;
+        if ticks % 60 == 0 {
             // 每 30 秒（60 个半秒 tick）报告一次
-            reporter.on_thinking(&format!(
+            reporter.on_heartbeat(&format!(
                 "模型仍在生成，已等待 {} 秒（Ctrl-C 可打断）...",
-                waited_secs / 2
+                ticks / 2
             ));
         }
     }
