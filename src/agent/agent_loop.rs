@@ -427,16 +427,52 @@ impl Agent {
             format!("{}/chat/completions", self.config.model.endpoint.trim_end_matches('/'))
         };
 
-        let resp = self.client
-            .post(&endpoint)
-            .header("Authorization", format!("Bearer {}", self.config.model.api_key))
-            .header("Content-Type", "application/json")
-            .json(&body)
-            .send()
-            .await?;
+        // 网关类错误（429/502/503/504）和网络错误自动重试 — 共 3 次尝试
+        const MAX_ATTEMPTS: u32 = 3;
+        let mut attempt = 0u32;
+        let (status, resp_text) = loop {
+            attempt += 1;
+            let sent = self.client
+                .post(&endpoint)
+                .header("Authorization", format!("Bearer {}", self.config.model.api_key))
+                .header("Content-Type", "application/json")
+                .json(&body)
+                .timeout(std::time::Duration::from_secs(180))
+                .send()
+                .await;
 
-        let status = resp.status();
-        let resp_text = resp.text().await?;
+            let outcome = match sent {
+                Ok(resp) => {
+                    let status = resp.status();
+                    let text = resp.text().await.unwrap_or_default();
+                    let code = status.as_u16();
+                    if code == 429 || code == 502 || code == 503 || code == 504 {
+                        Err(format!("网关错误 {}（网关超时或平台过载）", code))
+                    } else {
+                        Ok((status, text))
+                    }
+                }
+                Err(e) => Err(format!("网络错误: {}", e)),
+            };
+
+            match outcome {
+                Ok(pair) => break pair,
+                Err(reason) => {
+                    if attempt >= MAX_ATTEMPTS {
+                        anyhow::bail!(
+                            "LLM API 连续 {} 次失败，最后原因: {} (endpoint: {})",
+                            attempt, reason, endpoint
+                        );
+                    }
+                    let wait_secs = attempt * 2;
+                    self.reporter.on_step(&format!(
+                        "{}，{} 秒后重试（第 {}/{} 次尝试）...",
+                        reason, wait_secs, attempt + 1, MAX_ATTEMPTS
+                    ));
+                    tokio::time::sleep(std::time::Duration::from_secs(wait_secs as u64)).await;
+                }
+            }
+        };
 
         if !status.is_success() {
             anyhow::bail!("LLM API 返回错误 {} ({}): {}", status, endpoint, resp_text);

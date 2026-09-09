@@ -57,6 +57,36 @@ fn dirs_home() -> PathBuf {
     std::env::var("HOME").map(PathBuf::from).unwrap_or_else(|_| PathBuf::from("."))
 }
 
+/// WSL 下查找 Windows 侧（GUI 写入的）配置文件
+fn windows_side_config() -> Option<PathBuf> {
+    if !cfg!(target_os = "linux") {
+        return None;
+    }
+    let entries = std::fs::read_dir("/mnt/c/Users").ok()?;
+    for entry in entries.flatten() {
+        let p = entry.path().join("AppData/Roaming/stardew-steward/config.toml");
+        if p.is_file() {
+            return Some(p);
+        }
+    }
+    None
+}
+
+/// "C:\Users\..." / "C:/Users/..." → "/mnt/c/Users/..."（其他输入原样返回）
+fn to_wsl_path(p: &str) -> String {
+    let b = p.as_bytes();
+    if b.len() >= 3
+        && b[0].is_ascii_alphabetic()
+        && b[1] == b':'
+        && (b[2] == b'\\' || b[2] == b'/')
+    {
+        let drive = (b[0] as char).to_ascii_lowercase();
+        let rest = p[2..].replace('\\', "/");
+        return format!("/mnt/{}/{}", drive, rest.trim_start_matches('/'));
+    }
+    p.to_string()
+}
+
 /// 自动检测星露谷物语存档路径
 pub fn detect_save_path() -> Option<String> {
     if cfg!(target_os = "windows") {
@@ -150,8 +180,19 @@ pub fn ensure_builtin_save() -> Option<String> {
 }
 
 pub fn load() -> anyhow::Result<Config> {
+    // .env 中的 API_KEY 可覆盖配置文件（仓库根目录运行时生效）
+    let _ = dotenvy::dotenv();
+
     let dir = app_data_dir();
-    let config_path = dir.join("config.toml");
+    let mut config_path = dir.join("config.toml");
+
+    // WSL：本地无配置时复用 Windows 侧（GUI 设置面板写入的）配置，
+    // 让 CLI 和 GUI 共享同一份数据源；save/db 路径会翻译成 /mnt/c/... 形式
+    if !config_path.exists() {
+        if let Some(win_path) = windows_side_config() {
+            config_path = win_path;
+        }
+    }
 
     if !config_path.exists() {
         let save_path = detect_save_path()
@@ -201,6 +242,12 @@ pub fn load() -> anyhow::Result<Config> {
         if !key.is_empty() {
             config.model.api_key = key;
         }
+    }
+
+    // 读的是 Windows 侧配置时，把 C:\ 风格路径翻译成 WSL 可用路径
+    if cfg!(target_os = "linux") {
+        config.save.path = to_wsl_path(&config.save.path);
+        config.knowledge.db_path = to_wsl_path(&config.knowledge.db_path);
     }
 
     // Resolve db_path to absolute
