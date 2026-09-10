@@ -6,17 +6,40 @@ export function ChatMessage({ msg }) {
   const isUser = msg.role === "user";
   const typing = msg.typing;
   const schedule = !isUser && !typing ? tryParseSchedule(msg.text) : null;
+  const trace = !isUser && !typing && msg.trace && msg.trace.length > 0 ? msg.trace : null;
 
   return (
     <div
       className="sd-slide-in"
       style={{
         display: "flex",
-        justifyContent: isUser ? "flex-end" : "flex-start",
+        flexDirection: "column",
+        alignItems: isUser ? "flex-end" : "flex-start",
         marginBottom: "8px",
         opacity: msg.queued ? 0.55 : 1,
       }}
     >
+      {trace && (
+        <div
+          style={{
+            fontSize: "10px",
+            lineHeight: 1.6,
+            color: "var(--sd-text-light)",
+            padding: "0 10px",
+            marginBottom: "2px",
+            opacity: 0.9,
+            whiteSpace: "pre-wrap",
+            wordBreak: "break-word",
+          }}
+        >
+          {trace.map((t, i) => (
+            <div key={i}>
+              {t.type === "thinking" ? "💭 " : t.type === "error" ? "✗ " : "· "}
+              {t.text}
+            </div>
+          ))}
+        </div>
+      )}
       <div
         className="sd-bubble"
         style={{

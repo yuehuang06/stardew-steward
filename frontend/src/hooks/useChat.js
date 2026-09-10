@@ -13,6 +13,9 @@ export function useChat() {
   const [liveBrief, setLiveBrief] = useState("");
   const unlistenRef = useRef([]);
   const typingTimerRef = useRef(null);
+  // 完整工作轨迹: 进度区只显示最后 2 条（呼吸效果），
+  // 全量轨迹存这里，回答完成后附到助手消息上永久保留（课堂演示用）
+  const traceRef = useRef([]);
   // 异步输入队列: agent 回答时用户继续输入 → 排队，回答完自动发送
   const loadingRef = useRef(false);
   const queueRef = useRef([]);
@@ -23,15 +26,20 @@ export function useChat() {
       const handlers = [
         await listen("agent-step", (e) => {
           if (!cancelled) {
+            traceRef.current.push({ type: "step", text: e.payload });
             setProgress((p) => [...p, { type: "step", text: e.payload }].slice(-2));
             setStepCount((c) => c + 1);
           }
         }),
         await listen("agent-thinking", (e) => {
-          if (!cancelled) setProgress((p) => [...p, { type: "thinking", text: e.payload }].slice(-2));
+          if (!cancelled) {
+            traceRef.current.push({ type: "thinking", text: e.payload });
+            setProgress((p) => [...p, { type: "thinking", text: e.payload }].slice(-2));
+          }
         }),
         await listen("agent-error", (e) => {
           if (!cancelled) {
+            traceRef.current.push({ type: "error", text: e.payload });
             setProgress((p) => [...p, { type: "error", text: e.payload }].slice(-2));
             setError(e.payload);
           }
@@ -61,6 +69,7 @@ export function useChat() {
     setError(null);
     setProgress([]);
     setStepCount(0);
+    traceRef.current = [];
     if (typingTimerRef.current) {
       clearInterval(typingTimerRef.current);
       typingTimerRef.current = null;
@@ -73,6 +82,7 @@ export function useChat() {
       loadingRef.current = false;
       setLoading(false);
       setProgress([]);
+      const trace = traceRef.current.slice(0, 60);
 
       // Refresh session usage after chat
       try {
@@ -83,14 +93,14 @@ export function useChat() {
       // If reply is a schedule JSON, render directly without typing effect
       const trimmed = reply.trim();
       if (trimmed.startsWith("{") && trimmed.includes('"summary"') && trimmed.includes('"tasks"')) {
-        setMessages((m) => [...m, { role: "assistant", text: reply, typing: false }]);
+        setMessages((m) => [...m, { role: "assistant", text: reply, typing: false, trace }]);
       } else {
         const chars = [...reply];
         const totalTicks = Math.min(chars.length, 150);
         const charsPerTick = Math.ceil(chars.length / totalTicks);
         let i = 0;
 
-        setMessages((m) => [...m, { role: "assistant", text: "", typing: true }]);
+        setMessages((m) => [...m, { role: "assistant", text: "", typing: true, trace }]);
 
         typingTimerRef.current = setInterval(() => {
           i += charsPerTick;
@@ -99,13 +109,13 @@ export function useChat() {
             typingTimerRef.current = null;
             setMessages((m) => {
               const copy = [...m];
-              copy[copy.length - 1] = { role: "assistant", text: reply, typing: false };
+              copy[copy.length - 1] = { role: "assistant", text: reply, typing: false, trace };
               return copy;
             });
           } else {
             setMessages((m) => {
               const copy = [...m];
-              copy[copy.length - 1] = { role: "assistant", text: chars.slice(0, i).join(""), typing: true };
+              copy[copy.length - 1] = { role: "assistant", text: chars.slice(0, i).join(""), typing: true, trace };
               return copy;
             });
           }
@@ -115,7 +125,7 @@ export function useChat() {
       setError(String(e));
       setMessages((m) => [
         ...m,
-        { role: "assistant", text: `出错: ${e}` },
+        { role: "assistant", text: `出错: ${e}`, trace: traceRef.current.slice(0, 60) },
       ]);
       loadingRef.current = false;
       setLoading(false);
