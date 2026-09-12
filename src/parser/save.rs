@@ -450,10 +450,11 @@ fn extract_chests_from_objects(objects: &roxmltree::Node, loc_label: &str, resul
     }
 }
 
-/// 计算一个地点内所有洒水器的覆盖格集合
-/// - Sprinkler(基础): 十字4格; +增压喷嘴 → 3x3
+/// 计算一个地点内所有洒水器的覆盖格集合（范围经官方 wiki 核实）
+/// - Sprinkler(基础): 十字4格; +增压喷嘴 → 3x3（"now reaches the corner tiles"）
 /// - Quality Sprinkler: 3x3; +增压喷嘴 → 5x5
 /// - Iridium Sprinkler: 5x5; +增压喷嘴 → 7x7
+/// 注意: 基础款装喷嘴是"变方形"而非"扩一圈"，不能套用 +1 公式
 fn sprinkler_coverage(loc: &roxmltree::Node) -> std::collections::HashSet<(i32, i32)> {
     let mut covered = std::collections::HashSet::new();
     let objects = match loc.children().find(|n| n.has_tag_name("objects")) {
@@ -475,10 +476,11 @@ fn sprinkler_coverage(loc: &roxmltree::Node) -> std::collections::HashSet<(i32, 
             .unwrap_or("")
             .trim()
             .to_string();
-        let radius = match name.as_str() {
-            "Sprinkler" => 1,            // 十字(特判) / 喷嘴后 3x3
-            "Quality Sprinkler" => 1,    // 3x3 / 喷嘴后 5x5
-            "Iridium Sprinkler" => 2,    // 5x5 / 喷嘴后 7x7
+        // (无喷嘴方形半径, 有喷嘴方形半径); None = 无喷嘴时为十字
+        let (base_r, nozzle_r) = match name.as_str() {
+            "Sprinkler" => (None, 1),             // 十字4格 / 3x3
+            "Quality Sprinkler" => (Some(1), 2),  // 3x3 / 5x5
+            "Iridium Sprinkler" => (Some(2), 3),  // 5x5 / 7x7
             _ => continue,
         };
         let has_nozzle = obj.children()
@@ -505,19 +507,22 @@ fn sprinkler_coverage(loc: &roxmltree::Node) -> std::collections::HashSet<(i32, 
             None => continue,
         };
 
-        let r = if has_nozzle { radius + 1 } else { radius };
-        // 基础洒水器无喷嘴: 只浇十字4格
-        if name == "Sprinkler" && !has_nozzle {
-            for (dx, dy) in [(1, 0), (-1, 0), (0, 1), (0, -1)] {
-                covered.insert((x + dx, y + dy));
-            }
-        } else {
-            for dx in -r..=r {
-                for dy in -r..=r {
-                    if dx == 0 && dy == 0 {
-                        continue;
-                    }
+        match (base_r, has_nozzle) {
+            (None, false) => {
+                // 基础洒水器无喷嘴: 只浇十字4格
+                for (dx, dy) in [(1, 0), (-1, 0), (0, 1), (0, -1)] {
                     covered.insert((x + dx, y + dy));
+                }
+            }
+            _ => {
+                let r = if has_nozzle { nozzle_r } else { base_r.unwrap() };
+                for dx in -r..=r {
+                    for dy in -r..=r {
+                        if dx == 0 && dy == 0 {
+                            continue;
+                        }
+                        covered.insert((x + dx, y + dy));
+                    }
                 }
             }
         }
@@ -1015,12 +1020,16 @@ mod tests {
 <value><Object><name>Iridium Sprinkler</name><heldObject><name>Pressure Nozzle</name></heldObject></Object></value></item>
 <item><key><Vector2><X>20</X><Y>20</Y></Vector2></key>
 <value><Object><name>Sprinkler</name></Object></value></item>
+<item><key><Vector2><X>30</X><Y>30</Y></Vector2></key>
+<value><Object><name>Sprinkler</name><heldObject><name>Pressure Nozzle</name></heldObject></Object></value></item>
 </objects>"#;
-        let items = format!("{}{}{}{}",
+        let items = format!("{}{}{}{}{}{}",
             dirt(13, 12, 0, &corn(0, 0, false)), // 距铱洒 (3,3) 对角 → 覆盖
             dirt(14, 10, 0, &corn(0, 0, false)), // 距铱洒 (4,1) → 不覆盖
             dirt(21, 20, 0, &corn(0, 0, false)), // 基础洒右侧 → 覆盖
             dirt(22, 21, 0, &corn(0, 0, false)), // 基础洒斜角 → 不覆盖
+            dirt(31, 31, 0, &corn(0, 0, false)), // 基础洒+喷嘴 对角(1,1) → 覆盖(3x3)
+            dirt(32, 30, 0, &corn(0, 0, false)), // 基础洒+喷嘴 (2,0) → 不覆盖(仅3x3)
         );
         let xml = save_skeleton(&format!("{}{objects}", tf(&items)));
         let s = parse_xml(&xml).unwrap();
@@ -1028,7 +1037,9 @@ mod tests {
         assert!(!s.crops[1].sprinkler_covered, "超出 7x7 不覆盖");
         assert!(s.crops[2].sprinkler_covered, "基础洒十字应覆盖");
         assert!(!s.crops[3].sprinkler_covered, "基础洒斜角不覆盖");
-        assert_eq!(s.sprinklers, 2);
+        assert!(s.crops[4].sprinkler_covered, "基础洒+喷嘴 3x3 对角应覆盖");
+        assert!(!s.crops[5].sprinkler_covered, "基础洒+喷嘴 仅 3x3，(2,0) 不覆盖");
+        assert_eq!(s.sprinklers, 3);
     }
 
     #[test]
