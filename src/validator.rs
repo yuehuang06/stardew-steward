@@ -6,13 +6,12 @@ use crate::solver::DailySchedule;
 
 pub struct Validator {
     money: i32,
-    season: String,
     time_budget: f32,
 }
 
 impl Validator {
-    pub fn new(money: i32, season: &str, time_budget: f32) -> Self {
-        Self { money, season: season.into(), time_budget }
+    pub fn new(money: i32, time_budget: f32) -> Self {
+        Self { money, time_budget }
     }
 
     /// 校验日程，返回错误列表（空=通过）

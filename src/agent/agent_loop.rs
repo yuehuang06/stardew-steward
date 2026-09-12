@@ -626,3 +626,35 @@ struct LlmResponse {
     tool_call_id: String,
     tool_calls_json: serde_json::Value,
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn strip_reminder_cleans_old_pollution() {
+        // 旧版把提醒拼进用户消息的兼容清洗
+        assert_eq!(
+            strip_reminder("[系统提醒: 请重新调用 read_save 获取最新存档。]\n帮我安排今天的行程吧"),
+            "帮我安排今天的行程吧"
+        );
+        assert_eq!(strip_reminder("普通消息"), "普通消息");
+        assert_eq!(
+            strip_reminder("[系统提醒: xxx]\n第一条\n多行消息"),
+            "第一条\n多行消息"
+        );
+        // 只有前缀没有换行 → 原样返回（防误删）
+        assert_eq!(strip_reminder("[系统提醒: 无换行"), "[系统提醒: 无换行");
+    }
+
+    #[test]
+    fn extract_json_fenced_and_bare() {
+        let schedule = r#"{"summary":"测试","tasks":[]}"#;
+        assert_eq!(
+            extract_json(&format!("说明\n```json\n{}\n```\n补充", schedule)),
+            Some(schedule)
+        );
+        assert_eq!(extract_json(schedule), Some(schedule));
+        assert_eq!(extract_json("纯文本没有大括号"), None);
+    }
+}

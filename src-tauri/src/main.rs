@@ -35,11 +35,7 @@ fn main() {
                 if let Ok(state) =
                     stardew_steward::parser::parse(std::path::Path::new(&save_path))
                 {
-                    agent.set_validator(validator::Validator::new(
-                        state.money,
-                        &state.date.season,
-                        12.0,
-                    ));
+                    agent.set_validator(validator::Validator::new(state.money, 12.0));
                 }
 
                 let app_state = AppState {

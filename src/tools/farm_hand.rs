@@ -360,20 +360,3 @@ fn regrow_days_for(name: &str) -> i32 {
     }
 }
 
-fn extract_phase_days(block: &str) -> Vec<i32> {
-    let mut result = Vec::new();
-    let Some(start) = block.find("<phaseDays>") else { return result };
-    let Some(end) = block.find("</phaseDays>") else { return result };
-    let section = &block[start..end];
-    let mut rest = section;
-    while let Some(p) = rest.find("<int>") {
-        rest = &rest[p + 5..];
-        if let Some(c) = rest.find("</int>") {
-            if let Ok(v) = rest[..c].trim().parse::<i32>() {
-                result.push(v);
-            }
-            rest = &rest[c + 6..];
-        }
-    }
-    result
-}

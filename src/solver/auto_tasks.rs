@@ -10,18 +10,17 @@ use super::task::{Task, Priority};
 
 /// 从游戏状态自动生成候选任务列表
 pub fn generate_tasks(state: &GameState, kb: &Arc<Mutex<KnowledgeBase>>) -> Vec<Task> {
-    let kb = kb.lock().unwrap();
+    // 中毒锁恢复: 沿用数据胜于崩溃
+    let kb = kb.lock().unwrap_or_else(|e| e.into_inner());
     let mut tasks = Vec::new();
 
     // 1. 收获 — 扫描所有真正可收获的作物（1.6 规则: fullGrown && dop<0）
     let mut harvest_by_name: HashMap<String, u32> = HashMap::new();
-    let mut total_living_crops = 0u32;
     let mut total_need_water = 0u32;
     for crop in &state.crops {
         if crop.is_dead {
             continue;
         }
-        total_living_crops += 1;
         // 需要手浇 = 未浇 && 不在洒水器覆盖 && 还没成熟（成熟的不用浇）
         if !crop.watered && !crop.sprinkler_covered && !crop.harvestable {
             total_need_water += 1;

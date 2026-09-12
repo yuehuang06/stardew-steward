@@ -18,7 +18,7 @@ struct GiftSuggestion {
 
 /// gift_finder: 扫描背包+木箱，匹配 NPC 喜好，推荐送礼方案
 pub fn execute(state: &GameState, kb: &Arc<Mutex<KnowledgeBase>>) -> anyhow::Result<String> {
-    let kb = kb.lock().unwrap();
+    let kb = kb.lock().map_err(|e| anyhow::anyhow!("知识库锁异常: {}", e))?;
     let mut suggestions = Vec::new();
 
     let mut all_items: Vec<(String, u32)> = Vec::new();

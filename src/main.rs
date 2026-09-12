@@ -71,11 +71,7 @@ async fn main() -> anyhow::Result<()> {
     let validator = {
         match parser::parse(std::path::Path::new(&save_path)) {
             Ok(state) => {
-                let v = validator::Validator::new(
-                    state.money,
-                    &state.date.season,
-                    12.0,
-                );
+                let v = validator::Validator::new(state.money, 12.0);
                 Some(v)
             }
             Err(e) => {
@@ -95,7 +91,6 @@ async fn main() -> anyhow::Result<()> {
         ui::print_response(&result);
         ui::print_usage(&agent.usage_summary());
     } else {
-        use std::io::{self, Write};
         use std::sync::atomic::Ordering;
 
         // R4: Ctrl-C 打断 — 单击打断当前任务，双击强制退出
@@ -123,7 +118,7 @@ async fn main() -> anyhow::Result<()> {
         let mut rl = rustyline::DefaultEditor::new().expect("rustyline init");
 
         let mut pending: Vec<String> = Vec::new();
-        let mut quit_requested = false;
+        let quit_requested = false;
 
         loop {
             // 取下一条输入（优先消费排队消息）

@@ -26,7 +26,7 @@ struct CropProfit {
 
 /// crop_advisor: 分析当前作物收益并与当季其他作物对比
 pub fn execute(state: &GameState, kb: &Arc<Mutex<KnowledgeBase>>) -> anyhow::Result<String> {
-    let kb = kb.lock().unwrap();
+    let kb = kb.lock().map_err(|e| anyhow::anyhow!("知识库锁异常: {}", e))?;
     let season_cn = match state.date.season.as_str() {
         "spring" => "春", "summer" => "夏", "fall" => "秋", "winter" => "冬", _ => &state.date.season,
     };

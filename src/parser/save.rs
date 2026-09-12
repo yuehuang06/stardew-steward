@@ -477,8 +477,8 @@ fn sprinkler_coverage(loc: &roxmltree::Node) -> std::collections::HashSet<(i32, 
             .to_string();
         let radius = match name.as_str() {
             "Sprinkler" => 1,            // 十字(特判) / 喷嘴后 3x3
-            "Quality Sprinkler" => 2,    // 3x3 / 喷嘴后 5x5
-            "Iridium Sprinkler" => 3,    // 5x5 / 喷嘴后 7x7
+            "Quality Sprinkler" => 1,    // 3x3 / 喷嘴后 5x5
+            "Iridium Sprinkler" => 2,    // 5x5 / 喷嘴后 7x7
             _ => continue,
         };
         let has_nozzle = obj.children()
@@ -912,5 +912,179 @@ pub fn crop_id_to_name(id: i32) -> String {
         830 => "芋头".into(),        // 1.6 Taro
         833 => "胡萝卜".into(),      // 1.6 Carrot
         _ => format!("未知作物#{}", id),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// 最小可用存档骨架：money + Farm 地块的 terrainFeatures / objects
+    fn save_skeleton(farm_inner: &str) -> String {
+        format!(
+            r#"<SaveGame xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+<dayOfMonth>13</dayOfMonth><year>1</year><currentSeason>fall</currentSeason>
+<isRaining>false</isRaining><isLightning>false</isLightning>
+<weatherForTomorrow>Sun</weatherForTomorrow><dailyLuck>0.05</dailyLuck>
+<player><money>123</money><farmingLevel>1</farmingLevel><miningLevel>0</miningLevel>
+<combatLevel>0</combatLevel><foragingLevel>0</foragingLevel><fishingLevel>0</fishingLevel></player>
+<locations><GameLocation><name>Farm</name>{farm_inner}</GameLocation></locations>
+</SaveGame>"#
+        )
+    }
+
+    fn tf(items: &str) -> String {
+        format!("<terrainFeatures>{items}</terrainFeatures>")
+    }
+
+    fn dirt(x: i32, y: i32, state: u32, crop: &str) -> String {
+        format!(
+            r#"<item><key><Vector2><X>{x}</X><Y>{y}</Y></Vector2></key>
+<value><TerrainFeature xsi:type="HoeDirt"><state>{state}</state><Tile><X>{x}</X><Y>{y}</Y></Tile>{crop}</TerrainFeature></value></item>"#
+        )
+    }
+
+    /// 玉米: phaseDays [2,3,3,3,3,99999]，6 个阶段
+    fn corn(phase: i32, dop: i32, fg: bool) -> String {
+        format!(
+            r#"<crop><phaseDays><int>2</int><int>3</int><int>3</int><int>3</int><int>3</int><int>99999</int></phaseDays>
+<currentPhase>{phase}</currentPhase><dayOfCurrentPhase>{dop}</dayOfCurrentPhase>
+<indexOfHarvest>270</indexOfHarvest><fullGrown>{fg}</fullGrown><dead>false</dead></crop>"#
+        )
+    }
+
+    #[test]
+    fn harvestable_requires_negative_dop() {
+        // 1.6 规则: 末位(99999槽) + fullGrown + dop<0 才可收
+        let xml = save_skeleton(&tf(&format!(
+            "{}{}",
+            dirt(10, 10, 1, &corn(5, -1, true)),   // 可收
+            dirt(11, 10, 0, &corn(5, 3, true)),    // 再生倒计时中
+        )));
+        let s = parse_xml(&xml).unwrap();
+        assert!(s.crops[0].harvestable, "fg=true dop=-1 应可收");
+        assert_eq!(s.crops[0].days_to_harvest, 0);
+        assert!(!s.crops[1].harvestable, "fg=true dop=3 不可收");
+        assert_eq!(s.crops[1].days_to_harvest, 4, "dop=3 → 还需 4 晚");
+        assert!(s.crops[0].watered, "state=1 应为已浇");
+        assert!(!s.crops[1].watered);
+    }
+
+    #[test]
+    fn growing_crop_days_math() {
+        // 生长中: phase0 剩 2 天 + 后续 3+3+3+3 = 14 天（与玉米 14 天生长一致）
+        let xml = save_skeleton(&tf(&dirt(10, 10, 0, &corn(0, 0, false))));
+        let s = parse_xml(&xml).unwrap();
+        assert!(!s.crops[0].harvestable);
+        assert_eq!(s.crops[0].days_to_harvest, 14);
+        // 过 1 晚后 dop=1 → 13 天
+        let xml = save_skeleton(&tf(&dirt(10, 10, 0, &corn(0, 1, false))));
+        let s = parse_xml(&xml).unwrap();
+        assert_eq!(s.crops[0].days_to_harvest, 13);
+    }
+
+    #[test]
+    fn dead_and_unmature_not_harvestable() {
+        let dead = r#"<crop><phaseDays><int>1</int><int>99999</int></phaseDays>
+<currentPhase>1</currentPhase><dayOfCurrentPhase>6</dayOfCurrentPhase>
+<indexOfHarvest>280</indexOfHarvest><fullGrown>false</fullGrown><dead>true</dead></crop>"#;
+        let xml = save_skeleton(&tf(&dirt(10, 10, 0, dead)));
+        let s = parse_xml(&xml).unwrap();
+        assert!(!s.crops[0].harvestable);
+        assert_eq!(s.crops[0].days_to_harvest, -1);
+        assert_eq!(s.crops[0].name, "山药");
+    }
+
+    #[test]
+    fn watered_bit_with_fertilizer() {
+        // state=3 = 施肥(bit1) + 已浇(bit0)；state=2 = 仅施肥
+        let xml = save_skeleton(&tf(&format!("{}{}",
+            dirt(10, 10, 3, &corn(0, 0, false)),
+            dirt(11, 10, 2, &corn(0, 0, false)),
+        )));
+        let s = parse_xml(&xml).unwrap();
+        assert!(s.crops[0].watered, "state=3 含 bit0");
+        assert!(!s.crops[1].watered, "state=2 不含 bit0");
+    }
+
+    #[test]
+    fn sprinkler_coverage_geometry() {
+        // 铱洒(带增压喷嘴)在 (10,9) → 7×7 范围；普通基础洒在 (20,20) → 十字4格
+        let objects = r#"<objects>
+<item><key><Vector2><X>10</X><Y>9</Y></Vector2></key>
+<value><Object><name>Iridium Sprinkler</name><heldObject><name>Pressure Nozzle</name></heldObject></Object></value></item>
+<item><key><Vector2><X>20</X><Y>20</Y></Vector2></key>
+<value><Object><name>Sprinkler</name></Object></value></item>
+</objects>"#;
+        let items = format!("{}{}{}{}",
+            dirt(13, 12, 0, &corn(0, 0, false)), // 距铱洒 (3,3) 对角 → 覆盖
+            dirt(14, 10, 0, &corn(0, 0, false)), // 距铱洒 (4,1) → 不覆盖
+            dirt(21, 20, 0, &corn(0, 0, false)), // 基础洒右侧 → 覆盖
+            dirt(22, 21, 0, &corn(0, 0, false)), // 基础洒斜角 → 不覆盖
+        );
+        let xml = save_skeleton(&format!("{}{objects}", tf(&items)));
+        let s = parse_xml(&xml).unwrap();
+        assert!(s.crops[0].sprinkler_covered, "铱洒+喷嘴 7x7 对角应覆盖");
+        assert!(!s.crops[1].sprinkler_covered, "超出 7x7 不覆盖");
+        assert!(s.crops[2].sprinkler_covered, "基础洒十字应覆盖");
+        assert!(!s.crops[3].sprinkler_covered, "基础洒斜角不覆盖");
+        assert_eq!(s.sprinklers, 2);
+    }
+
+    #[test]
+    fn fruit_tree_parse() {
+        let tf = r#"<terrainFeatures><item>
+<key><Vector2><X>5</X><Y>5</Y></Vector2></key>
+<value><TerrainFeature xsi:type="FruitTree"><growthStage>4</growthStage><treeId>633</treeId>
+<daysUntilMature>-156</daysUntilMature><fruitsOnTree xsi:nil="true" />
+<fruit xsi:type="Object"><name>Apple</name></fruit></TerrainFeature></value></item></terrainFeatures>"#;
+        let xml = save_skeleton(tf);
+        let s = parse_xml(&xml).unwrap();
+        assert_eq!(s.fruit_trees.len(), 1);
+        assert_eq!(s.fruit_trees[0].name, "苹果树");
+        assert_eq!(s.fruit_trees[0].mature, 1);
+        assert_eq!(s.fruit_trees[0].ready, 0, "fruitsOnTree nil = 无果");
+    }
+
+    #[test]
+    fn crop_id_map_verified() {
+        // 经两份真实存档 seedIndex+phaseDays 实证的映射（旧版大面积错位）
+        assert_eq!(crop_id_to_name(270), "玉米");   // 14天生长+复收
+        assert_eq!(crop_id_to_name(276), "南瓜");   // 13天
+        assert_eq!(crop_id_to_name(272), "茄子");   // 5天+5再生
+        assert_eq!(crop_id_to_name(280), "山药");
+        assert_eq!(crop_id_to_name(282), "蔓越莓");
+        assert_eq!(crop_id_to_name(421), "向日葵"); // 8天, seed 431
+        assert_eq!(crop_id_to_name(304), "啤酒花");
+        assert_eq!(crop_id_to_name(258), "蓝莓");
+        assert_eq!(crop_id_to_name(400), "草莓");
+        assert_eq!(crop_id_to_name(595), "玫瑰仙子");
+        assert_eq!(crop_id_to_name(597), "霜瓜");
+        assert_eq!(crop_id_to_name(454), "远古水果");
+        assert_eq!(crop_id_to_name(830), "芋头");
+    }
+
+    #[test]
+    fn forage_crop_named() {
+        // 野生种子: forageCrop=true 且无 indexOfHarvest
+        let crop = r#"<crop><phaseDays><int>1</int><int>2</int><int>99999</int></phaseDays>
+<currentPhase>0</currentPhase><dayOfCurrentPhase>0</dayOfCurrentPhase>
+<forageCrop>true</forageCrop><whichForageCrop>1</whichForageCrop>
+<fullGrown>false</fullGrown><dead>false</dead></crop>"#;
+        let xml = save_skeleton(&tf(&dirt(10, 10, 0, crop)));
+        let s = parse_xml(&xml).unwrap();
+        assert_eq!(s.crops[0].name, "野生作物（野种）");
+        assert_eq!(s.crops[0].item_id, -1);
+    }
+
+    #[test]
+    fn money_and_buildings_parse() {
+        let xml = save_skeleton(r#"<buildings><Building><buildingType>Junimo Hut</buildingType></Building>
+<Building><buildingType>Silo</buildingType></Building></buildings>"#);
+        let s = parse_xml(&xml).unwrap();
+        assert_eq!(s.money, 123);
+        assert_eq!(s.junimo_huts, 1);
+        assert!(s.buildings.iter().any(|b| b.name.contains("Junimo")));
+        assert!(s.buildings.iter().any(|b| b.name.contains("筒仓")));
     }
 }
